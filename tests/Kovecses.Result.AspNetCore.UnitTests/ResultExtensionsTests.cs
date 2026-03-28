@@ -226,5 +226,28 @@ public class ResultExtensionsTests
         objectResult.Value.ShouldBe(result);
     }
 
+    [Theory]
+    [InlineData(ErrorType.Failure, StatusCodes.Status400BadRequest)]
+    [InlineData(ErrorType.Validation, StatusCodes.Status400BadRequest)]
+    [InlineData(ErrorType.NotFound, StatusCodes.Status404NotFound)]
+    [InlineData(ErrorType.Conflict, StatusCodes.Status409Conflict)]
+    [InlineData(ErrorType.Unauthorized, StatusCodes.Status401Unauthorized)]
+    [InlineData(ErrorType.Forbidden, StatusCodes.Status403Forbidden)]
+    [InlineData(ErrorType.Timeout, StatusCodes.Status408RequestTimeout)]
+    [InlineData(ErrorType.Unexpected, StatusCodes.Status500InternalServerError)]
+    public void ToActionResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
+    {
+        // Arrange
+        var error = Error.Custom("Code", "Message", errorType);
+        var result = Result.Failure(error);
+
+        // Act
+        var actionResult = result.ToActionResult();
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(expectedStatusCode);
+    }
+
     #endregion
 }
