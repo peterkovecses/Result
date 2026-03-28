@@ -1,1 +1,1 @@
-global using Kovecses.Result;
+global using Microsoft.Extensions.DependencyInjection;

@@ -5,18 +5,14 @@
 GET {{Host}}/employees/1
 
 ### 2. Get Employee - Success (Wrapped Result)
-# Returns 200 OK with the full Result object (including IsSuccess, Data, Error)
+# Returns 200 OK with the full Result object
 GET {{Host}}/employees/1/wrapped
 
 ### 3. Get Employee - Not Found (Standard REST)
 # Returns 404 Not Found as a standard ProblemDetails object
 GET {{Host}}/employees/99
 
-### 4. Get Employee - Not Found (Wrapped Result)
-# Returns 404 Not Found with the full Result object in the body
-GET {{Host}}/employees/99/wrapped
-
-### 5. Create Employee - Success
+### 4. Create Employee - Success
 # Returns 201 Created with the new employee data
 POST {{Host}}/employees
 Content-Type: application/json
@@ -26,36 +22,40 @@ Content-Type: application/json
   "position": "Lead Singer"
 }
 
-### 6. Create Employee - Validation Error
-# Returns 400 Bad Request with Validation ProblemDetails (including metadata)
+### 5. Create Employee - Validation Error (Custom Code: Employee.NameTooShort)
+# Returns 400 Bad Request with Validation ProblemDetails
 POST {{Host}}/employees
 Content-Type: application/json
 
 {
-  "fullName": "",
-  "position": "Unknown"
+  "fullName": "Jo",
+  "position": "Intern"
 }
 
-### 7. Create Employee - Conflict Error
+### 6. Create Employee - Conflict Error
 # Returns 409 Conflict with standard ProblemDetails
 POST {{Host}}/employees
 Content-Type: application/json
 
 {
-  "fullName": "John Doe",
+  "fullName": "The Boss",
   "position": "Duplicate"
 }
 
-### 8. Update Employee - Success
+### 7. Update Employee - Success
 # Returns 204 No Content on success
 PUT {{Host}}/employees/1
 Content-Type: application/json
 
 {
   "id": 1,
-  "fullName": "John Updated",
-  "position": "Senior Engineer"
+  "fullName": "The Real Boss",
+  "position": "Chief Executive Officer"
 }
+
+### 8. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
+# Returns 400 Bad Request (ErrorType.Failure) with custom message and code
+DELETE {{Host}}/employees/1
 
 ### 9. Delete Employee - Success
 # Returns 204 No Content on success

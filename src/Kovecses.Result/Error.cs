@@ -98,8 +98,8 @@ public record Error
     /// <summary>
     /// Creates a "Validation" error.
     /// </summary>
-    public static Error Validation(Dictionary<string, object> errors, string message = "One or more validation errors occurred.")
-        => new(ErrorCodes.Validation, message, ErrorType.Validation, errors);
+    public static Error Validation(Dictionary<string, object> errors, string message = "One or more validation errors occurred.", string code = ErrorCodes.Validation)
+        => new(code, message, ErrorType.Validation, errors);
 
     /// <summary>
     /// Creates a "NotFound" error.
@@ -134,7 +134,7 @@ public record Error
     /// <summary>
     /// Creates a "Timeout" error.
     /// </summary>
-    public static Error Timeout(string message = "The operation has timed out.", string code = ErrorCodes.Timeout)
+    public static Error Timeout(string message = "The operation has timeout.", string code = ErrorCodes.Timeout)
         => new(code, message, ErrorType.Timeout);
 
     /// <summary>

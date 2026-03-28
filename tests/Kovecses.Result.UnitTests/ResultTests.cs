@@ -18,7 +18,7 @@ public class ResultTests
     public void SuccessGeneric_WhenCalled_ShouldReturnSuccessResultWithValue()
     {
         // Arrange
-        var value = "SuccessData";
+        const string value = "SuccessData";
 
         // Act
         var result = Result.Success(value);
@@ -47,8 +47,8 @@ public class ResultTests
     public void Failure_WhenCalledWithCodeAndMessage_ShouldReturnFailureResult()
     {
         // Arrange
-        var code = "Test.Code";
-        var message = "Test Message";
+        const string code = "Test.Code";
+        const string message = "Test Message";
 
         // Act
         var result = Result.Failure(code, message);
@@ -64,7 +64,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningValue_ShouldReturnSuccessResult()
     {
         // Arrange
-        var value = 42;
+        const int value = 42;
 
         // Act
         Result<int> result = value;

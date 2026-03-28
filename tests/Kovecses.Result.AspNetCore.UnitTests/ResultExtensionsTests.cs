@@ -21,7 +21,7 @@ public class ResultExtensionsTests
     public void ToMinimalApiResult_WhenSuccessWithData_ShouldReturnOkWithData()
     {
         // Arrange
-        var data = "TestData";
+        const string data = "TestData";
         var result = Result.Success(data);
 
         // Act
@@ -36,7 +36,7 @@ public class ResultExtensionsTests
     public void ToMinimalApiResult_WhenSuccessWithNullData_ShouldReturnNoContent()
     {
         // Arrange
-        Result<string?> result = Result.Success<string?>(null);
+        var result = Result.Success<string?>(null);
 
         // Act
         var apiResult = result.ToMinimalApiResult();
@@ -63,7 +63,7 @@ public class ResultExtensionsTests
     public void ToMinimalApiResult_WhenSuccessWithDataAndIncludeResult_ShouldReturnOkWithResult()
     {
         // Arrange
-        var data = "TestData";
+        const string data = "TestData";
         var result = Result.Success(data);
 
         // Act
@@ -106,6 +106,29 @@ public class ResultExtensionsTests
         jsonResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
         jsonResult.Value.ShouldBe(result);
     }
+    
+    [Theory]
+    [InlineData(ErrorType.Failure, StatusCodes.Status400BadRequest)]
+    [InlineData(ErrorType.Validation, StatusCodes.Status400BadRequest)]
+    [InlineData(ErrorType.NotFound, StatusCodes.Status404NotFound)]
+    [InlineData(ErrorType.Conflict, StatusCodes.Status409Conflict)]
+    [InlineData(ErrorType.Unauthorized, StatusCodes.Status401Unauthorized)]
+    [InlineData(ErrorType.Forbidden, StatusCodes.Status403Forbidden)]
+    [InlineData(ErrorType.Timeout, StatusCodes.Status408RequestTimeout)]
+    [InlineData(ErrorType.Unexpected, StatusCodes.Status500InternalServerError)]
+    public void ToMinimalApiResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
+    {
+        // Arrange
+        var error = Error.Custom("Code", "Message", errorType);
+        var result = Result.Failure(error);
+
+        // Act
+        var apiResult = result.ToMinimalApiResult();
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(expectedStatusCode);
+    }
 
     #endregion
 
@@ -128,7 +151,7 @@ public class ResultExtensionsTests
     public void ToActionResult_WhenSuccessWithData_ShouldReturnOkWithData()
     {
         // Arrange
-        var data = 123;
+        const int data = 123;
         var result = Result.Success(data);
 
         // Act
@@ -157,7 +180,7 @@ public class ResultExtensionsTests
     public void ToActionResult_WhenSuccessWithDataAndIncludeResult_ShouldReturnOkWithResult()
     {
         // Arrange
-        var data = "TestData";
+        const string data = "TestData";
         var result = Result.Success(data);
 
         // Act
@@ -204,27 +227,4 @@ public class ResultExtensionsTests
     }
 
     #endregion
-
-    [Theory]
-    [InlineData(ErrorType.Failure, StatusCodes.Status400BadRequest)]
-    [InlineData(ErrorType.Validation, StatusCodes.Status400BadRequest)]
-    [InlineData(ErrorType.NotFound, StatusCodes.Status404NotFound)]
-    [InlineData(ErrorType.Conflict, StatusCodes.Status409Conflict)]
-    [InlineData(ErrorType.Unauthorized, StatusCodes.Status401Unauthorized)]
-    [InlineData(ErrorType.Forbidden, StatusCodes.Status403Forbidden)]
-    [InlineData(ErrorType.Timeout, StatusCodes.Status408RequestTimeout)]
-    [InlineData(ErrorType.Unexpected, StatusCodes.Status500InternalServerError)]
-    public void ToMinimalApiResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
-    {
-        // Arrange
-        var error = Error.Custom("Code", "Message", errorType);
-        var result = Result.Failure(error);
-
-        // Act
-        var apiResult = result.ToMinimalApiResult();
-
-        // Assert
-        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
-        problemResult.StatusCode.ShouldBe(expectedStatusCode);
-    }
 }

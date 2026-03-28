@@ -6,9 +6,9 @@ public class ErrorTests
     public void Custom_WhenCalled_ShouldInitializeCorrectly()
     {
         // Arrange
-        var code = "User.Conflict";
-        var message = "A conflict occurred.";
-        var type = ErrorType.Conflict;
+        const string code = "User.Conflict";
+        const string message = "A conflict occurred.";
+        const ErrorType type = ErrorType.Conflict;
         var metadata = new Dictionary<string, object> { { "UserId", 123 } };
 
         // Act
