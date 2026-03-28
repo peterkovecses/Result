@@ -16,12 +16,14 @@ public static class ResultExtensions
     /// <returns>An <see cref="IResult"/> representing the operation outcome.</returns>
     public static IResult ToMinimalApiResult(this Result result, bool includeResultInResponse = false)
     {
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            return includeResultInResponse ? Results.Ok(result) : Results.NoContent();
+            return MapToProblem(result, includeResultInResponse);
         }
 
-        return MapToProblem(result, includeResultInResponse);
+        return includeResultInResponse 
+            ? Results.Ok(result) 
+            : Results.NoContent();
     }
 
     /// <summary>
@@ -33,17 +35,19 @@ public static class ResultExtensions
     /// <returns>An <see cref="IResult"/> representing the operation outcome.</returns>
     public static IResult ToMinimalApiResult<TData>(this Result<TData> result, bool includeResultInResponse = false)
     {
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            if (includeResultInResponse)
-            {
-                return Results.Ok(result);
-            }
-
-            return result.Data is null ? Results.NoContent() : Results.Ok(result.Data);
+            return MapToProblem(result, includeResultInResponse);
         }
 
-        return MapToProblem(result, includeResultInResponse);
+        if (includeResultInResponse)
+        {
+            return Results.Ok(result);
+        }
+
+        return result.Data is null 
+            ? Results.NoContent()
+            : Results.Ok(result.Data);
     }
 
     /// <summary>
@@ -54,12 +58,14 @@ public static class ResultExtensions
     /// <returns>An <see cref="IActionResult"/> representing the operation outcome.</returns>
     public static IActionResult ToActionResult(this Result result, bool includeResultInResponse = false)
     {
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            return includeResultInResponse ? new OkObjectResult(result) : new NoContentResult();
+            return MapToActionResultProblem(result, includeResultInResponse);
         }
 
-        return MapToActionResultProblem(result, includeResultInResponse);
+        return includeResultInResponse 
+            ? new OkObjectResult(result) 
+            : new NoContentResult();
     }
 
     /// <summary>
@@ -71,17 +77,19 @@ public static class ResultExtensions
     /// <returns>An <see cref="IActionResult"/> representing the operation outcome.</returns>
     public static IActionResult ToActionResult<TData>(this Result<TData> result, bool includeResultInResponse = false)
     {
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            if (includeResultInResponse)
-            {
-                return new OkObjectResult(result);
-            }
-
-            return result.Data is null ? new NoContentResult() : new OkObjectResult(result.Data);
+            return MapToActionResultProblem(result, includeResultInResponse);
         }
 
-        return MapToActionResultProblem(result, includeResultInResponse);
+        if (includeResultInResponse)
+        {
+            return new OkObjectResult(result);
+        }
+
+        return result.Data is null 
+            ? new NoContentResult() 
+            : new OkObjectResult(result.Data);
     }
 
     private static IResult MapToProblem(Result result, bool includeResultInResponse)
@@ -102,7 +110,7 @@ public static class ResultExtensions
         );
     }
 
-    private static IActionResult MapToActionResultProblem(Result result, bool includeResultInResponse)
+    private static ObjectResult MapToActionResultProblem(Result result, bool includeResultInResponse)
     {
         var error = result.Error ?? throw new InvalidOperationException("Failure result must have an error.");
         var statusCode = GetStatusCode(error.Type);
