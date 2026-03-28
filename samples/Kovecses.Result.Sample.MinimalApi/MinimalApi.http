@@ -1,0 +1,62 @@
+@Host = http://localhost:5110
+
+### 1. Get Employee - Success (Standard REST)
+# Returns 200 OK with the employee data directly
+GET {{Host}}/employees/1
+
+### 2. Get Employee - Success (Wrapped Result)
+# Returns 200 OK with the full Result object (including IsSuccess, Data, Error)
+GET {{Host}}/employees/1/wrapped
+
+### 3. Get Employee - Not Found (Standard REST)
+# Returns 404 Not Found as a standard ProblemDetails object
+GET {{Host}}/employees/99
+
+### 4. Get Employee - Not Found (Wrapped Result)
+# Returns 404 Not Found with the full Result object in the body
+GET {{Host}}/employees/99/wrapped
+
+### 5. Create Employee - Success
+# Returns 201 Created with the new employee data
+POST {{Host}}/employees
+Content-Type: application/json
+
+{
+  "fullName": "Alice Cooper",
+  "position": "Lead Singer"
+}
+
+### 6. Create Employee - Validation Error
+# Returns 400 Bad Request with Validation ProblemDetails (including metadata)
+POST {{Host}}/employees
+Content-Type: application/json
+
+{
+  "fullName": "",
+  "position": "Unknown"
+}
+
+### 7. Create Employee - Conflict Error
+# Returns 409 Conflict with standard ProblemDetails
+POST {{Host}}/employees
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "position": "Duplicate"
+}
+
+### 8. Update Employee - Success
+# Returns 204 No Content on success
+PUT {{Host}}/employees/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "fullName": "John Updated",
+  "position": "Senior Engineer"
+}
+
+### 9. Delete Employee - Success
+# Returns 204 No Content on success
+DELETE {{Host}}/employees/2

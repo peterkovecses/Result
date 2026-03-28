@@ -84,6 +84,12 @@ public class Result
     /// <param name="message">The error message.</param>
     /// <returns>A failed <see cref="Result{TData}"/>.</returns>
     public static Result<TData> Failure<TData>(string code, string message) => new(default, new Error(code, message, ErrorType.Failure));
+
+    /// <summary>
+    /// Implicitly converts an <see cref="Error"/> to a failed <see cref="Result"/>.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    public static implicit operator Result(Error error) => Failure(error);
 }
 
 /// <summary>
@@ -113,4 +119,10 @@ public class Result<TData> : Result
     /// </summary>
     /// <param name="data">The data.</param>
     public static implicit operator Result<TData>(TData data) => Success(data);
+
+    /// <summary>
+    /// Implicitly converts an <see cref="Error"/> to a failed <see cref="Result{TData}"/>.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    public static implicit operator Result<TData>(Error error) => Failure<TData>(error);
 }
