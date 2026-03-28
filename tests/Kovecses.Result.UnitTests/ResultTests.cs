@@ -60,18 +60,60 @@ public class ResultTests
         result.Error.Message.ShouldBe(message);
     }
 
-    [Fact]
-    public void ImplicitOperator_WhenAssigningValue_ShouldReturnSuccessResult()
+    [Theory]
+    [InlineData(42)]
+    [InlineData("SuccessData")]
+    [InlineData(null)]
+    public void ImplicitOperator_ShouldReturnSuccessResultWithCorrectData<T>(T value)
     {
-        // Arrange
-        const int value = 42;
-
         // Act
-        Result<int> result = value;
+        Result<T> result = value;
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Data.ShouldBe(value);
+    }
+
+    [Fact]
+    public void ImplicitOperator_WhenAssigningListToIEnumerable_ShouldWorkCorrectly()
+    {
+        // Arrange
+        var list = new List<int> { 1, 2, 3 };
+
+        // Act
+        Result<IEnumerable<int>> result = list;
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        result.Data.ShouldBe(list);
+    }
+
+    [Fact]
+    public void ImplicitOperator_WhenAssigningErrorToResult_ShouldReturnFailure()
+    {
+        // Arrange
+        var error = Error.NotFound();
+
+        // Act
+        Result result = error;
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.Error.ShouldBe(error);
+    }
+
+    [Fact]
+    public void ImplicitOperator_WhenAssigningErrorToGenericResult_ShouldReturnFailure()
+    {
+        // Arrange
+        var error = Error.Validation([]);
+
+        // Act
+        Result<int> result = error;
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.Error.ShouldBe(error);
     }
 
     [Fact]
