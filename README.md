@@ -150,3 +150,45 @@ public void Should_Have_Correct_Data()
 - **Readability:** The assertions follow the `Should().Be...` pattern, making tests feel like natural language.
 - **Improved Stack Traces:** The library uses `[StackTraceHidden]`, so when an assertion fails, the IDE points directly to your test method instead of the library's internal code.
 - **Chaining:** You can chain multiple assertions for complex objects.
+
+## 7. Functional Extensions (Railway-Oriented Programming)
+The library supports functional programming patterns to enable cleaner, "railway-oriented" code flow. This reduces nested `if` statements and makes the business logic more declarative.
+
+### Match / MatchAsync
+Execute different functions based on the result's state.
+
+```csharp
+// Synchronous in a Controller
+return result.Match(
+    data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
+    error => result.ToActionResult()
+);
+
+// Asynchronous
+return await result.MatchAsync(
+    async data => await SaveAndNotify(data),
+    error => Task.FromResult(BadRequest(error))
+);
+```
+
+### Map / MapAsync
+Transform the successful data of a result while preserving failures.
+
+```csharp
+// Transform Employee to EmployeeDto
+Result<EmployeeDto> dto = result.Map(e => new EmployeeDto(e.Id, e.FullName));
+```
+
+### Bind / BindAsync (FlatMap)
+Chain multiple result-returning operations. If any step fails, the entire chain returns the failure.
+
+```csharp
+public async Task<Result> UpdateEmployee(int id, UpdateRequest request)
+{
+    return await _repository.GetByIdAsync(id)           // Returns Task<Result<Employee>>
+        .BindAsync(employee => {                        // Execute if GetByIdAsync succeeded
+            employee.Update(request);
+            return _repository.UpdateAsync(employee);   // Returns Task<Result>
+        });
+}
+```

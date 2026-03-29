@@ -23,14 +23,10 @@ employeesGroup.MapGet("/{id:int}/wrapped", async (int id, IMediator mediator, Ca
 employeesGroup.MapPost("/", async (CreateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
 {
     var result = await mediator.SendAsync(command, ct);
-    
-    // We can also use a custom success handler if needed
-    if (result.IsSuccess)
-    {
-        return Results.Created($"/employees/{result.Data!.Id}", result.Data);
-    }
-    
-    return result.ToMinimalApiResult();
+
+    return result.Match(
+        data => Results.Created($"/employees/{data.Id}", data),
+        _ => result.ToMinimalApiResult());
 });
 
 // 4. Put - Standard REST (No content on success)

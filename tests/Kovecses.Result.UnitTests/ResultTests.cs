@@ -138,4 +138,134 @@ public class ResultTests
         deserialized.Should().BeFailure().HaveErrorCode(error.Code);
         deserialized.Should().HaveError().HaveMetadata("Email", "Invalid");
     }
+
+    [Fact]
+    public void Match_WhenSuccess_ShouldExecuteOnSuccess()
+    {
+        // Arrange
+        var result = Result.Success();
+
+        // Act
+        var output = result.Match(() => "Success", error => "Failure");
+
+        // Assert
+        Assert.Equal("Success", output);
+    }
+
+    [Fact]
+    public void Match_WhenFailure_ShouldExecuteOnFailure()
+    {
+        // Arrange
+        var result = Result.Failure(Error.NotFound());
+
+        // Act
+        var output = result.Match(() => "Success", error => "Failure");
+
+        // Assert
+        Assert.Equal("Failure", output);
+    }
+
+    [Fact]
+    public async Task MatchAsync_WhenSuccess_ShouldExecuteOnSuccess()
+    {
+        // Arrange
+        var result = Result.Success();
+
+        // Act
+        var output = await result.MatchAsync(() => Task.FromResult("Success"), error => Task.FromResult("Failure"));
+
+        // Assert
+        Assert.Equal("Success", output);
+    }
+
+    [Fact]
+    public void MatchGeneric_WhenSuccess_ShouldExecuteOnSuccessWithData()
+    {
+        // Arrange
+        var result = Result.Success("Data");
+
+        // Act
+        var output = result.Match(data => data, error => "Failure");
+
+        // Assert
+        Assert.Equal("Data", output);
+    }
+
+    [Fact]
+    public void Map_WhenSuccess_ShouldTransformData()
+    {
+        // Arrange
+        var result = Result.Success(10);
+
+        // Act
+        var mapped = result.Map(x => x * 2);
+
+        // Assert
+        mapped.Should().BeSuccess().HaveData(20);
+    }
+
+    [Fact]
+    public void Map_WhenFailure_ShouldReturnFailure()
+    {
+        // Arrange
+        var result = Result.Failure<int>(Error.Validation([]));
+
+        // Act
+        var mapped = result.Map(x => x * 2);
+
+        // Assert
+        mapped.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task MapAsync_WhenSuccess_ShouldTransformData()
+    {
+        // Arrange
+        var result = Result.Success(10);
+
+        // Act
+        var mapped = await result.MapAsync(x => Task.FromResult(x * 2));
+
+        // Assert
+        mapped.Should().BeSuccess().HaveData(20);
+    }
+
+    [Fact]
+    public void Bind_WhenSuccess_ShouldChainOperation()
+    {
+        // Arrange
+        var result = Result.Success(10);
+
+        // Act
+        var bound = result.Bind(x => Result.Success(x.ToString()));
+
+        // Assert
+        bound.Should().BeSuccess().HaveData("10");
+    }
+
+    [Fact]
+    public void Bind_WhenFailure_ShouldReturnFailure()
+    {
+        // Arrange
+        var result = Result.Failure<int>(Error.NotFound());
+
+        // Act
+        var bound = result.Bind(x => Result.Success(x.ToString()));
+
+        // Assert
+        bound.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task BindAsync_WhenSuccess_ShouldChainOperation()
+    {
+        // Arrange
+        var result = Result.Success(10);
+
+        // Act
+        var bound = await result.BindAsync(x => Task.FromResult(Result.Success(x.ToString())));
+
+        // Assert
+        bound.Should().BeSuccess().HaveData("10");
+    }
 }

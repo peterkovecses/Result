@@ -90,6 +90,42 @@ public class Result
     /// </summary>
     /// <param name="error">The error.</param>
     public static implicit operator Result(Error error) => Failure(error);
+
+    /// <summary>
+    /// Executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">The function to execute on failure.</param>
+    /// <returns>The result of the executed function.</returns>
+    public TResult Match<TResult>(Func<TResult> onSuccess, Func<Error, TResult> onFailure)
+        => IsSuccess ? onSuccess() : onFailure(Error!);
+
+    /// <summary>
+    /// Asynchronously executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">The function to execute on failure.</param>
+    /// <returns>A task representing the result of the executed function.</returns>
+    public async Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<Error, Task<TResult>> onFailure)
+        => IsSuccess ? await onSuccess() : await onFailure(Error!);
+
+    /// <summary>
+    /// Chains another operation if the current result is successful.
+    /// </summary>
+    /// <param name="next">The next operation to execute.</param>
+    /// <returns>The result of the next operation, or the current failure.</returns>
+    public Result Bind(Func<Result> next)
+        => IsSuccess ? next() : this;
+
+    /// <summary>
+    /// Asynchronously chains another operation if the current result is successful.
+    /// </summary>
+    /// <param name="next">The next operation to execute.</param>
+    /// <returns>A task representing the result of the next operation, or the current failure.</returns>
+    public async Task<Result> BindAsync(Func<Task<Result>> next)
+        => IsSuccess ? await next() : this;
 }
 
 /// <summary>
@@ -125,4 +161,60 @@ public class Result<TData> : Result
     /// </summary>
     /// <param name="error">The error.</param>
     public static implicit operator Result<TData>(Error error) => Failure<TData>(error);
+
+    /// <summary>
+    /// Executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">The function to execute on failure with the error.</param>
+    /// <returns>The result of the executed function.</returns>
+    public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<Error, TResult> onFailure)
+        => IsSuccess ? onSuccess(Data!) : onFailure(Error!);
+
+    /// <summary>
+    /// Asynchronously executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">The function to execute on failure with the error.</param>
+    /// <returns>A task representing the result of the executed function.</returns>
+    public async Task<TResult> MatchAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<Error, Task<TResult>> onFailure)
+        => IsSuccess ? await onSuccess(Data!) : await onFailure(Error!);
+
+    /// <summary>
+    /// Transforms the success value of the result.
+    /// </summary>
+    /// <typeparam name="TNewData">The type of the transformed data.</typeparam>
+    /// <param name="map">The mapping function.</param>
+    /// <returns>A new result with the transformed data, or the current failure.</returns>
+    public Result<TNewData> Map<TNewData>(Func<TData, TNewData> map)
+        => IsSuccess ? Success(map(Data!)) : Failure<TNewData>(Error!);
+
+    /// <summary>
+    /// Asynchronously transforms the success value of the result.
+    /// </summary>
+    /// <typeparam name="TNewData">The type of the transformed data.</typeparam>
+    /// <param name="map">The asynchronous mapping function.</param>
+    /// <returns>A task representing the new result with the transformed data, or the current failure.</returns>
+    public async Task<Result<TNewData>> MapAsync<TNewData>(Func<TData, Task<TNewData>> map)
+        => IsSuccess ? Success(await map(Data!)) : Failure<TNewData>(Error!);
+
+    /// <summary>
+    /// Chains another result-returning operation if the current result is successful.
+    /// </summary>
+    /// <typeparam name="TNewData">The type of the new result data.</typeparam>
+    /// <param name="next">The next operation to execute.</param>
+    /// <returns>The result of the next operation, or the current failure.</returns>
+    public Result<TNewData> Bind<TNewData>(Func<TData, Result<TNewData>> next)
+        => IsSuccess ? next(Data!) : Failure<TNewData>(Error!);
+
+    /// <summary>
+    /// Asynchronously chains another result-returning operation if the current result is successful.
+    /// </summary>
+    /// <typeparam name="TNewData">The type of the new result data.</typeparam>
+    /// <param name="next">The next asynchronous operation to execute.</param>
+    /// <returns>A task representing the result of the next operation, or the current failure.</returns>
+    public async Task<Result<TNewData>> BindAsync<TNewData>(Func<TData, Task<Result<TNewData>>> next)
+        => IsSuccess ? await next(Data!) : Failure<TNewData>(Error!);
 }

@@ -27,12 +27,10 @@ public class EmployeesController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Create(CreateEmployeeCommand command, CancellationToken ct)
     {
         var result = await mediator.SendAsync(command, ct);
-        if (result.IsSuccess)
-        {
-            return CreatedAtAction(nameof(Get), new { id = result.Data!.Id }, result.Data);
-        }
 
-        return result.ToActionResult();
+        return result.Match(
+            data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
+            _ => result.ToActionResult());
     }
 
     // 4. Put - Standard REST (No content on success)
