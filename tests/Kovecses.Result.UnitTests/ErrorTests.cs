@@ -94,6 +94,18 @@ public class ErrorTests
     }
 
     [Fact]
+    public void Failure_WhenCalledWithParams_ShouldUseCorrectValues()
+    {
+        // Act
+        var error = Error.Failure("Custom Message", "Custom.Code");
+
+        // Assert
+        error.Should().HaveCode("Custom.Code")
+            .HaveMessage("Custom Message")
+            .HaveType(ErrorType.Failure);
+    }
+
+    [Fact]
     public void Timeout_WhenCalled_ShouldUseCorrectDefaults()
     {
         // Act

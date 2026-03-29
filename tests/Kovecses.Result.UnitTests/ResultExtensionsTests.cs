@@ -42,6 +42,19 @@ public class ResultExtensionsTests
     }
 
     [Fact]
+    public async Task MapAsync_WithTaskResultGeneric_TaskMapping_WhenSuccess_ShouldTransform()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Success(10));
+
+        // Act
+        var result = await task.MapAsync(x => Task.FromResult(x * 2));
+
+        // Assert
+        result.Should().BeSuccess().HaveData(20);
+    }
+
+    [Fact]
     public async Task BindAsync_WithTaskResultGeneric_WhenSuccess_ShouldChain()
     {
         // Arrange
@@ -62,6 +75,21 @@ public class ResultExtensionsTests
 
         // Act
         var output = await task.MatchAsync(data => data, error => "Failure");
+
+        // Assert
+        Assert.Equal("Data", output);
+    }
+
+    [Fact]
+    public async Task MatchAsync_WithTaskResultGeneric_AsyncFunctions_WhenSuccess_ShouldExecuteOnSuccess()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Success("Data"));
+
+        // Act
+        var output = await task.MatchAsync(
+            data => Task.FromResult(data), 
+            error => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Data", output);

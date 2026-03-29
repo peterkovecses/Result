@@ -130,6 +130,21 @@ public class ResultExtensionsTests
         problemResult.StatusCode.ShouldBe(expectedStatusCode);
     }
 
+    [Fact]
+    public void Error_ToMinimalApiResult_ShouldReturnProblem()
+    {
+        // Arrange
+        var error = Error.NotFound("Error msg");
+
+        // Act
+        var apiResult = error.ToMinimalApiResult();
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        problemResult.ProblemDetails.Detail.ShouldBe("Error msg");
+    }
+
     #endregion
 
     #region ToActionResult
@@ -247,6 +262,23 @@ public class ResultExtensionsTests
         // Assert
         var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
         objectResult.StatusCode.ShouldBe(expectedStatusCode);
+    }
+
+    [Fact]
+    public void Error_ToActionResult_ShouldReturnProblemDetails()
+    {
+        // Arrange
+        var error = Error.Conflict("Error msg");
+
+        // Act
+        var actionResult = error.ToActionResult();
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status409Conflict);
+
+        var problemDetails = objectResult.Value.ShouldBeOfType<ProblemDetails>();
+        problemDetails.Detail.ShouldBe("Error msg");
     }
 
     #endregion

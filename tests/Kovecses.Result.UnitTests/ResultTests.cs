@@ -67,7 +67,7 @@ public class ResultTests
     }
 
     [Fact]
-    public void ImplicitOperator_WhenAssigningListToIEnumerable_ShouldWorkCorrectly()
+    public void ImplicitOperator_WhenAssigningDerivedListToBaseInterface_ShouldSucceed()
     {
         // Arrange
         var list = new List<int> { 1, 2, 3 };
@@ -189,6 +189,73 @@ public class ResultTests
 
         // Assert
         Assert.Equal("Data", output);
+    }
+
+    [Fact]
+    public async Task MatchAsync_Result_WhenSuccess_ShouldExecuteOnSuccess()
+    {
+        // Arrange
+        var result = Result.Success();
+
+        // Act
+        var output = await result.MatchAsync(() => Task.FromResult("Success"), error => Task.FromResult("Failure"));
+
+        // Assert
+        Assert.Equal("Success", output);
+    }
+
+    [Fact]
+    public async Task MatchAsync_ResultGeneric_WhenSuccess_ShouldExecuteOnSuccess()
+    {
+        // Arrange
+        var result = Result.Success(10);
+
+        // Act
+        var output = await result.MatchAsync(
+            data => Task.FromResult(data.ToString()), 
+            error => Task.FromResult("Failure"));
+
+        // Assert
+        Assert.Equal("10", output);
+    }
+
+    [Fact]
+    public void Bind_Result_WhenSuccess_ShouldExecuteNext()
+    {
+        // Arrange
+        var result = Result.Success();
+
+        // Act
+        var bound = result.Bind(() => Result.Success());
+
+        // Assert
+        bound.Should().BeSuccess();
+    }
+
+    [Fact]
+    public void Bind_Result_WhenFailure_ShouldReturnFailure()
+    {
+        // Arrange
+        var result = Result.Failure(Error.NotFound());
+
+        // Act
+        var bound = result.Bind(() => Result.Success());
+
+        // Assert
+        bound.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task BindAsync_Result_WhenSuccess_ShouldExecuteNext()
+    {
+        // Arrange
+        var result = Result.Success();
+
+        // Act
+        var bound = await result.BindAsync(() => Task.FromResult(Result.Success()));
+
+        // Assert
+        bound.Should().BeSuccess();
     }
 
     [Fact]
@@ -379,6 +446,30 @@ public class ResultTests
         // Assert
         result.Should().BeSuccess();
         Assert.Equal("1.0", result.Metadata!["Version"]);
+    }
+
+    [Fact]
+    public void HaveData_WithPredicate_WhenValueMatches_ShouldNotThrow()
+    {
+        // Arrange
+        var result = Result.Success(10);
+
+        // Act & Assert
+        result.Should().HaveData(x => x > 5);
+    }
+
+    [Fact]
+    public void HaveMetadata_WithValue_WhenKeyAndValueMatch_ShouldSucceed()
+    {
+        // Arrange
+        var error = Error.Validation(new Dictionary<string, object> { { "Key", "Value" } });
+
+        // Act & Assert
+        error.Should().HaveMetadata("Key", "Value");
+        
+        // Asserting that it throws when metadata is wrong (to cover failure paths in assertions)
+        Assert.ThrowsAny<Exception>(() => error.Should().HaveMetadata("Key", "WrongValue"));
+        Assert.ThrowsAny<Exception>(() => error.Should().HaveMetadata("MissingKey", "Value"));
     }
 
     [Fact]
