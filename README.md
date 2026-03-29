@@ -1,6 +1,28 @@
 # Kovecses.Result
 
+[![NuGet Version](https://img.shields.io/nuget/v/Kovecses.Result?style=flat-square&logo=nuget)](https://www.nuget.org/packages/Kovecses.Result)
+[![NuGet Version (AspNetCore)](https://img.shields.io/nuget/v/Kovecses.Result.AspNetCore?style=flat-square&logo=nuget&label=AspNetCore)](https://www.nuget.org/packages/Kovecses.Result.AspNetCore)
+[![NuGet Version (FluentAssertions)](https://img.shields.io/nuget/v/Kovecses.Result.FluentAssertions?style=flat-square&logo=nuget&label=FluentAssertions)](https://www.nuget.org/packages/Kovecses.Result.FluentAssertions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
 A lightweight, functional, and robust Result pattern implementation for .NET 8, 9, and 10 with seamless ASP.NET Core integration.
+
+## Installation
+
+Install the packages via NuGet:
+
+```bash
+# Core Library
+dotnet add package Kovecses.Result
+
+# ASP.NET Core Integration
+dotnet add package Kovecses.Result.AspNetCore
+
+# Fluent Assertions for Testing
+dotnet add package Kovecses.Result.FluentAssertions
+```
+
+---
 
 ## 1. Introduction
 The Result pattern encapsulates the outcome of an operation. Instead of relying on exceptions for flow control, methods return a `Result` object that explicitly indicates success or failure.
