@@ -9,9 +9,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.IsFailure.ShouldBeFalse();
-        result.Error.ShouldBeNull();
+        result.Should().BeSuccess();
     }
 
     [Fact]
@@ -24,8 +22,7 @@ public class ResultTests
         var result = Result.Success(value);
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Data.ShouldBe(value);
+        result.Should().BeSuccess().HaveData(value);
     }
 
     [Fact]
@@ -38,9 +35,7 @@ public class ResultTests
         var result = Result.Failure(error);
 
         // Assert
-        result.IsSuccess.ShouldBeFalse();
-        result.IsFailure.ShouldBeTrue();
-        result.Error.ShouldBe(error);
+        result.Should().BeFailure().HaveErrorCode(error.Code);
     }
 
     [Fact]
@@ -54,10 +49,8 @@ public class ResultTests
         var result = Result.Failure(code, message);
 
         // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Error.ShouldNotBeNull();
-        result.Error.Code.ShouldBe(code);
-        result.Error.Message.ShouldBe(message);
+        result.Should().BeFailure().HaveErrorCode(code);
+        result.Should().HaveError().HaveMessage(message);
     }
 
     [Theory]
@@ -70,8 +63,7 @@ public class ResultTests
         Result<T> result = value;
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Data.ShouldBe(value);
+        result.Should().BeSuccess().HaveData(value);
     }
 
     [Fact]
@@ -84,8 +76,7 @@ public class ResultTests
         Result<IEnumerable<int>> result = list;
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Data.ShouldBe(list);
+        result.Should().BeSuccess().HaveData(list);
     }
 
     [Fact]
@@ -98,8 +89,7 @@ public class ResultTests
         Result result = error;
 
         // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Error.ShouldBe(error);
+        result.Should().BeFailure().HaveErrorCode(error.Code);
     }
 
     [Fact]
@@ -112,8 +102,7 @@ public class ResultTests
         Result<int> result = error;
 
         // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Error.ShouldBe(error);
+        result.Should().BeFailure().HaveErrorCode(error.Code);
     }
 
     [Fact]
@@ -128,9 +117,8 @@ public class ResultTests
         var deserialized = JsonSerializer.Deserialize<Result<string>>(json, options);
 
         // Assert
-        deserialized.ShouldNotBeNull();
-        deserialized.IsSuccess.ShouldBeTrue();
-        deserialized.Data.ShouldBe(result.Data);
+        Assert.NotNull(deserialized);
+        deserialized.Should().BeSuccess().HaveData(result.Data!);
     }
 
     [Fact]
@@ -146,11 +134,8 @@ public class ResultTests
         var deserialized = JsonSerializer.Deserialize<Result<string>>(json, options);
 
         // Assert
-        deserialized.ShouldNotBeNull();
-        deserialized.IsFailure.ShouldBeTrue();
-        deserialized.Error.ShouldNotBeNull();
-        deserialized.Error.Code.ShouldBe(error.Code);
-        deserialized.Error.Metadata.ShouldNotBeNull();
-        deserialized.Error.Metadata.ContainsKey("Email").ShouldBeTrue();
+        Assert.NotNull(deserialized);
+        deserialized.Should().BeFailure().HaveErrorCode(error.Code);
+        deserialized.Should().HaveError().HaveMetadata("Email", "Invalid");
     }
 }

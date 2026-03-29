@@ -1,2 +1,2 @@
-global using Shouldly;
+global using Kovecses.Result.FluentAssertions;
 global using System.Text.Json;

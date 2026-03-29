@@ -1,3 +1,5 @@
+using Kovecses.Result.FluentAssertions;
+
 namespace Kovecses.Result.UnitTests;
 
 public class ErrorTests
@@ -15,10 +17,10 @@ public class ErrorTests
         var error = Error.Custom(code, message, type, metadata);
 
         // Assert
-        error.Code.ShouldBe(code);
-        error.Message.ShouldBe(message);
-        error.Type.ShouldBe(type);
-        error.Metadata.ShouldBe(metadata);
+        error.Should().HaveCode(code)
+            .HaveMessage(message)
+            .HaveType(type)
+            .HaveMetadata("UserId", 123);
     }
 
     [Fact]
@@ -31,9 +33,9 @@ public class ErrorTests
         var error = Error.Validation(metadata);
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Validation);
-        error.Type.ShouldBe(ErrorType.Validation);
-        error.Metadata.ShouldBe(metadata);
+        error.Should().HaveCode(ErrorCodes.Validation)
+            .HaveType(ErrorType.Validation)
+            .HaveMetadata("Field", "Required");
     }
 
     [Fact]
@@ -43,8 +45,8 @@ public class ErrorTests
         var error = Error.NotFound();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.NotFound);
-        error.Type.ShouldBe(ErrorType.NotFound);
+        error.Should().HaveCode(ErrorCodes.NotFound)
+            .HaveType(ErrorType.NotFound);
     }
 
     [Fact]
@@ -54,8 +56,8 @@ public class ErrorTests
         var error = Error.Unauthorized();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Unauthorized);
-        error.Type.ShouldBe(ErrorType.Unauthorized);
+        error.Should().HaveCode(ErrorCodes.Unauthorized)
+            .HaveType(ErrorType.Unauthorized);
     }
 
     [Fact]
@@ -65,8 +67,8 @@ public class ErrorTests
         var error = Error.Forbidden();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Forbidden);
-        error.Type.ShouldBe(ErrorType.Forbidden);
+        error.Should().HaveCode(ErrorCodes.Forbidden)
+            .HaveType(ErrorType.Forbidden);
     }
 
     [Fact]
@@ -76,8 +78,8 @@ public class ErrorTests
         var error = Error.Conflict();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Conflict);
-        error.Type.ShouldBe(ErrorType.Conflict);
+        error.Should().HaveCode(ErrorCodes.Conflict)
+            .HaveType(ErrorType.Conflict);
     }
 
     [Fact]
@@ -87,8 +89,8 @@ public class ErrorTests
         var error = Error.Failure();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Failure);
-        error.Type.ShouldBe(ErrorType.Failure);
+        error.Should().HaveCode(ErrorCodes.Failure)
+            .HaveType(ErrorType.Failure);
     }
 
     [Fact]
@@ -98,8 +100,8 @@ public class ErrorTests
         var error = Error.Timeout();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Timeout);
-        error.Type.ShouldBe(ErrorType.Timeout);
+        error.Should().HaveCode(ErrorCodes.Timeout)
+            .HaveType(ErrorType.Timeout);
     }
 
     [Fact]
@@ -109,7 +111,7 @@ public class ErrorTests
         var error = Error.Unexpected();
 
         // Assert
-        error.Code.ShouldBe(ErrorCodes.Unexpected);
-        error.Type.ShouldBe(ErrorType.Unexpected);
+        error.Should().HaveCode(ErrorCodes.Unexpected)
+            .HaveType(ErrorType.Unexpected);
     }
 }

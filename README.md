@@ -26,8 +26,14 @@ public Result Update() => Result.Success();
 // 2. Success with data (using implicit conversion)
 public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer");
 
-// 3. Failure (using implicit conversion from Error)
+// 3. Failure using built-in factories (implicit conversion from Error)
 public Result<Employee> Get(int id) => Error.NotFound($"Employee {id} not found.");
+
+// 4. Other Built-in Error Factories
+public Result Create(string name) => Error.Conflict($"Employee {name} already exists.");
+public Result Validate(string email) => Error.Validation(new Dictionary<string, object> { { "Email", "Invalid format" } });
+public Result Delete(int id) => Error.Failure("Cannot delete the administrator.", "Admin.DeleteNotAllowed");
+public Result CheckAuth() => Error.Unauthorized("Please log in.");
 ```
 
 ### Mapping to HTTP Responses
@@ -70,7 +76,7 @@ The library automatically maps `ErrorType` to the most appropriate HTTP status c
 | Unexpected| 500 | Internal server error |
 
 ## 5. Custom Error Codes
-Beyond standard types, you can define business-specific error codes to help clients handle specific scenarios.
+Beyond standard types, you can define business-specific error codes and factory methods.
 
 ### Defining Custom Codes
 ```csharp
@@ -81,16 +87,66 @@ public static class UserErrorCodes
 }
 ```
 
-### Using Custom Codes
-When creating an error, pass your custom code. It will be included in the `Code` property of the response.
+### Extension Methods for Custom Errors
+You can create extension methods for the `Error` class to provide a clean, fluent API for your domain-specific errors.
 
 ```csharp
-if (user.IsDisabled)
+public static class UserErrors
 {
-    return Error.Failure(
-        message: "Your account is disabled.",
+    public static Error AccountDisabled(int userId) => Error.Failure(
+        message: $"Account {userId} is disabled.",
         code: UserErrorCodes.AccountDisabled);
+
+    public static Error EmailNotVerified() => Error.Unauthorized(
+        message: "Your email is not verified.",
+        code: UserErrorCodes.EmailNotVerified);
+}
+
+// Usage in Service:
+if (user.IsDisabled) return UserErrors.AccountDisabled(user.Id);
+```
+
+## 6. Fluent Assertions for Testing
+The `Kovecses.Result.FluentAssertions` package provides a set of fluent extension methods for xUnit to make your tests more readable.
+
+### Basic Assertions
+```csharp
+using Kovecses.Result.FluentAssertions;
+
+[Fact]
+public void Should_Be_Successful()
+{
+    var result = _service.DoWork();
+    
+    result.Should().BeSuccess();
+}
+
+[Fact]
+public void Should_Fail_With_Specific_Error()
+{
+    var result = _service.Get(999);
+    
+    result.Should().BeFailure()
+        .HaveErrorCode(ErrorCodes.NotFound);
+        
+    result.Should().HaveError()
+        .HaveMessage("Employee 999 not found.");
 }
 ```
 
-This allows clients to check the `code` property in the JSON response and trigger specific UI logic.
+### Generic Result Assertions
+```csharp
+[Fact]
+public void Should_Have_Correct_Data()
+{
+    var result = _service.Get(1);
+    
+    result.Should().BeSuccess()
+        .HaveData(e => e.FullName == "The Boss");
+}
+```
+
+### Why use these assertions?
+- **Readability:** The assertions follow the `Should().Be...` pattern, making tests feel like natural language.
+- **Improved Stack Traces:** The library uses `[StackTraceHidden]`, so when an assertion fails, the IDE points directly to your test method instead of the library's internal code.
+- **Chaining:** You can chain multiple assertions for complex objects.
