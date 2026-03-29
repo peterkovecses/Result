@@ -11,6 +11,10 @@
     <Authors>Peter Kovecses</Authors>
     <Description>Fluent assertions for Kovecses.Result using xUnit.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/peterkovecses/Result</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/peterkovecses/Result</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>result;error-handling;fluentassertions;test;unit-test</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

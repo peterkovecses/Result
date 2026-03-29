@@ -11,6 +11,10 @@
     <Authors>Peter Kovecses</Authors>
     <Description>A simple, powerful, and System.Text.Json-native Result pattern implementation for .NET.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/peterkovecses/Result</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/peterkovecses/Result</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>result;error-handling;functional;json</PackageTags>
   </PropertyGroup>
 
 </Project>

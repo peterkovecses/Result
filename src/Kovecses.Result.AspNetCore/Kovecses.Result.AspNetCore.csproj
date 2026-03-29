@@ -11,6 +11,10 @@
     <Authors>Peter Kovecses</Authors>
     <Description>ASP.NET Core extensions for Kovecses.Result to automatically map results to HTTP responses.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/peterkovecses/Result</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/peterkovecses/Result</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>result;error-handling;aspnetcore;webapi</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
