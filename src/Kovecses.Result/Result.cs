@@ -107,7 +107,7 @@ public class Result
     public static implicit operator Result(Error error) => Failure(error);
 
     /// <summary>
-    /// Executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// Executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
     /// </summary>
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
     /// <param name="onSuccess">The function to execute on success.</param>
@@ -117,7 +117,7 @@ public class Result
         => IsSuccess ? onSuccess() : onFailure(Error!);
 
     /// <summary>
-    /// Asynchronously executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
     /// </summary>
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
     /// <param name="onSuccess">The function to execute on success.</param>
@@ -202,7 +202,7 @@ public class Result<TData>(TData? data, Error? error, Dictionary<string, object>
     public static implicit operator Result<TData>(Error error) => Failure<TData>(error);
 
     /// <summary>
-    /// Executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// Executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
     /// </summary>
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
     /// <param name="onSuccess">The function to execute on success with the data.</param>
@@ -212,7 +212,7 @@ public class Result<TData>(TData? data, Error? error, Dictionary<string, object>
         => IsSuccess ? onSuccess(Data!) : onFailure(Error!);
 
     /// <summary>
-    /// Asynchronously executes the onStatusSuccess function if the result is successful, otherwise executes the onStatusFailure function.
+    /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
     /// </summary>
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
     /// <param name="onSuccess">The function to execute on success with the data.</param>

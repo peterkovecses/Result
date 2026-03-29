@@ -134,7 +134,7 @@ public record Error
     /// <summary>
     /// Creates a "Timeout" error.
     /// </summary>
-    public static Error Timeout(string message = "The operation has timeout.", string code = ErrorCodes.Timeout)
+    public static Error Timeout(string message = "The operation has timed out.", string code = ErrorCodes.Timeout)
         => new(code, message, ErrorType.Timeout);
 
     /// <summary>

@@ -37,8 +37,19 @@ public interface IMediator
         where TResult : Result;
 }
 
+/// <summary>
+/// A simple mediator to decouple requests from their handlers and add cross-cutting concerns like validation.
+/// </summary>
+/// <param name="serviceProvider">The service provider to resolve handlers and validators.</param>
 public class Mediator(IServiceProvider serviceProvider) : IMediator
 {
+    /// <summary>
+    /// Sends a request to its corresponding handler, applying validation if a validator is registered.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result.</typeparam>
+    /// <param name="request">The request to send.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the result of the request.</returns>
     public async Task<TResult> SendAsync<TResult>(IRequest<TResult> request, CancellationToken cancellationToken = default) 
         where TResult : Result
     {
