@@ -240,4 +240,26 @@ public class Result<TData>(TData? data, Error? error) : Result(error)
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
     public async Task<Result<TNewData>> BindAsync<TNewData>(Func<TData, Task<Result<TNewData>>> next)
         => IsSuccess ? await next(Data!) : Failure<TNewData>(Error!);
+
+    /// <summary>
+    /// Returns the data if the result is successful, otherwise throws an exception.
+    /// </summary>
+    /// <param name="exceptionFactory">An optional factory to create the exception to throw. If null, an <see cref="InvalidOperationException"/> is thrown.</param>
+    /// <returns>The data contained in the result.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the result is a failure and no exception factory is provided.</exception>
+    public TData ValueOrThrow(Func<Error, Exception>? exceptionFactory = null)
+    {
+        if (IsSuccess) return Data!;
+        
+        throw exceptionFactory?.Invoke(Error!) 
+              ?? new InvalidOperationException($"Cannot access data of a failure result. Error: {Error!.Code} - {Error.Message}");
+    }
+
+    /// <summary>
+    /// Returns the data if the result is successful, otherwise returns the provided default value.
+    /// </summary>
+    /// <param name="defaultValue">The value to return if the result is a failure.</param>
+    /// <returns>The data or the default value.</returns>
+    public TData? ValueOrDefault(TData? defaultValue = default)
+        => IsSuccess ? Data : defaultValue;
 }

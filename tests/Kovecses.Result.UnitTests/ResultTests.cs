@@ -307,4 +307,63 @@ public class ResultTests
         result.Should().HaveError().HaveMetadata("V.1");
         result.Should().HaveError().HaveMetadata("C.2");
     }
+
+    [Fact]
+    public void ValueOrThrow_WhenSuccess_ShouldReturnData()
+    {
+        // Arrange
+        var result = Result.Success("SuccessData");
+
+        // Act
+        var value = result.ValueOrThrow();
+
+        // Assert
+        Assert.Equal("SuccessData", value);
+    }
+
+    [Fact]
+    public void ValueOrThrow_WhenFailure_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound());
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => result.ValueOrThrow());
+    }
+
+    [Fact]
+    public void ValueOrThrow_WhenFailureWithCustomFactory_ShouldThrowCustomException()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound());
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => result.ValueOrThrow(e => new ArgumentException(e.Code)));
+    }
+
+    [Fact]
+    public void ValueOrDefault_WhenSuccess_ShouldReturnData()
+    {
+        // Arrange
+        var result = Result.Success("SuccessData");
+
+        // Act
+        var value = result.ValueOrDefault("Default");
+
+        // Assert
+        Assert.Equal("SuccessData", value);
+    }
+
+    [Fact]
+    public void ValueOrDefault_WhenFailure_ShouldReturnDefaultValue()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound());
+
+        // Act
+        var value = result.ValueOrDefault("Default");
+
+        // Assert
+        Assert.Equal("Default", value);
+    }
 }

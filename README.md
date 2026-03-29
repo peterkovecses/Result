@@ -219,3 +219,17 @@ if (result.IsFailure)
     // result.Error is a Validation error containing all codes and messages
 }
 ```
+
+### Safety Helpers
+Sometimes you need to extract the value from a `Result<T>` without complex matching, especially in tests or background tasks where you are certain of the outcome or want to fail fast.
+
+```csharp
+// 1. ValueOrThrow - Throws InvalidOperationException on failure
+var data = result.ValueOrThrow();
+
+// 2. ValueOrThrow with Custom Exception
+var data = result.ValueOrThrow(error => new MyDomainException(error.Message));
+
+// 3. ValueOrDefault - Returns default(T) or provided value on failure
+var data = result.ValueOrDefault("Fallback Value");
+```
