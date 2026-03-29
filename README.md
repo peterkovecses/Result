@@ -192,3 +192,14 @@ public async Task<Result> UpdateEmployee(int id, UpdateRequest request)
         });
 }
 ```
+
+### Async Chaining (Task Extensions)
+You can chain operations directly on `Task<Result>` or `Task<Result<T>>` without manual `await` at each step. This makes asynchronous "railway-oriented" pipelines much cleaner.
+
+```csharp
+// Chain multiple async operations seamlessly
+return await _repository.GetByIdAsync(id)               // Task<Result<Employee>>
+    .BindAsync(employee => _service.Validate(employee)) // Task<Result<Employee>>
+    .BindAsync(employee => _repository.Update(employee))// Task<Result>
+    .MatchAsync(() => Results.NoContent(), error => error.ToMinimalApiResult());
+```
