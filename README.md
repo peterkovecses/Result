@@ -233,3 +233,11 @@ var data = result.ValueOrThrow(error => new MyDomainException(error.Message));
 // 3. ValueOrDefault - Returns default(T) or provided value on failure
 var data = result.ValueOrDefault("Fallback Value");
 ```
+
+### Success Metadata
+You can attach metadata even to successful results. This is useful for providing extra context like performance metrics, warnings, or versioning without affecting the success status.
+
+```csharp
+var metadata = new Dictionary<string, object> { { "TraceId", "abc-123" } };
+return Result.Success(data, metadata);
+```

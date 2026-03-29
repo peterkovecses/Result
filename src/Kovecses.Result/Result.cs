@@ -13,6 +13,11 @@ public class Result
     public Error? Error { get; init; }
 
     /// <summary>
+    /// Gets the optional metadata associated with the result.
+    /// </summary>
+    public Dictionary<string, object>? Metadata { get; init; }
+
+    /// <summary>
     /// Gets a value indicating whether the operation was successful.
     /// </summary>
     [JsonIgnore]
@@ -28,10 +33,12 @@ public class Result
     /// Initializes a new instance of the <see cref="Result"/> class.
     /// </summary>
     /// <param name="error">The error if the operation failed, otherwise null.</param>
+    /// <param name="metadata">Optional metadata associated with the result.</param>
     [JsonConstructor]
-    public Result(Error? error)
+    public Result(Error? error, Dictionary<string, object>? metadata = null)
     {
         Error = error;
+        Metadata = metadata;
     }
 
     /// <summary>
@@ -42,39 +49,45 @@ public class Result
     /// <summary>
     /// Creates a successful result.
     /// </summary>
+    /// <param name="metadata">Optional metadata.</param>
     /// <returns>A successful <see cref="Result"/>.</returns>
-    public static Result Success() => new();
+    public static Result Success(Dictionary<string, object>? metadata = null) => new(null, metadata);
 
     /// <summary>
     /// Creates a successful result with data.
     /// </summary>
     /// <typeparam name="TData">The type of the data.</typeparam>
     /// <param name="data">The data to return.</param>
+    /// <param name="metadata">Optional metadata.</param>
     /// <returns>A successful <see cref="Result{TData}"/>.</returns>
-    public static Result<TData> Success<TData>(TData data) => new(data, null);
+    public static Result<TData> Success<TData>(TData data, Dictionary<string, object>? metadata = null) => new(data, null, metadata);
 
     /// <summary>
     /// Creates a failed result from an <see cref="Error"/>.
     /// </summary>
     /// <param name="error">The error.</param>
+    /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result"/>.</returns>
-    public static Result Failure(Error error) => new(error);
+    public static Result Failure(Error error, Dictionary<string, object>? metadata = null) => new(error, metadata);
 
     /// <summary>
     /// Creates a failed result from a code and message.
     /// </summary>
     /// <param name="code">The error code.</param>
     /// <param name="message">The error message.</param>
+    /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result"/>.</returns>
-    public static Result Failure(string code, string message) => new(new Error(code, message, ErrorType.Failure));
+    public static Result Failure(string code, string message, Dictionary<string, object>? metadata = null) 
+        => new(new Error(code, message, ErrorType.Failure), metadata);
 
     /// <summary>
     /// Creates a failed result with data.
     /// </summary>
     /// <typeparam name="TData">The type of the data.</typeparam>
     /// <param name="error">The error.</param>
+    /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result{TData}"/>.</returns>
-    public static Result<TData> Failure<TData>(Error error) => new(default, error);
+    public static Result<TData> Failure<TData>(Error error, Dictionary<string, object>? metadata = null) => new(default, error, metadata);
 
     /// <summary>
     /// Creates a failed result with data from a code and message.
@@ -82,8 +95,10 @@ public class Result
     /// <typeparam name="TData">The type of the data.</typeparam>
     /// <param name="code">The error code.</param>
     /// <param name="message">The error message.</param>
+    /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result{TData}"/>.</returns>
-    public static Result<TData> Failure<TData>(string code, string message) => new(default, new Error(code, message, ErrorType.Failure));
+    public static Result<TData> Failure<TData>(string code, string message, Dictionary<string, object>? metadata = null) 
+        => new(default, new Error(code, message, ErrorType.Failure), metadata);
 
     /// <summary>
     /// Implicitly converts an <see cref="Error"/> to a failed <see cref="Result"/>.
@@ -165,8 +180,9 @@ public class Result
 /// </remarks>
 /// <param name="data">The data returned on success.</param>
 /// <param name="error">The error if the operation failed, otherwise null.</param>
+/// <param name="metadata">Optional metadata associated with the result.</param>
 [method: JsonConstructor]
-public class Result<TData>(TData? data, Error? error) : Result(error)
+public class Result<TData>(TData? data, Error? error, Dictionary<string, object>? metadata = null) : Result(error, metadata)
 {
     /// <summary>
     /// Gets the data returned on success, or null if the operation failed.

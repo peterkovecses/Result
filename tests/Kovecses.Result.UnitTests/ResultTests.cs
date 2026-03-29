@@ -366,4 +366,36 @@ public class ResultTests
         // Assert
         Assert.Equal("Default", value);
     }
+
+    [Fact]
+    public void Success_WithMetadata_ShouldStoreMetadata()
+    {
+        // Arrange
+        var metadata = new Dictionary<string, object> { { "Version", "1.0" } };
+
+        // Act
+        var result = Result.Success(metadata);
+
+        // Assert
+        result.Should().BeSuccess();
+        Assert.Equal("1.0", result.Metadata!["Version"]);
+    }
+
+    [Fact]
+    public void Serialization_WithSuccessMetadata_ShouldSerializeCorrectly()
+    {
+        // Arrange
+        var metadata = new Dictionary<string, object> { { "Warning", "Legacy API" } };
+        var result = Result.Success("Data", metadata);
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+        // Act
+        var json = JsonSerializer.Serialize(result, options);
+        var deserialized = JsonSerializer.Deserialize<Result<string>>(json, options);
+
+        // Assert
+        Assert.NotNull(deserialized);
+        deserialized.Should().BeSuccess().HaveData("Data");
+        Assert.Equal("Legacy API", deserialized.Metadata!["Warning"].ToString());
+    }
 }
