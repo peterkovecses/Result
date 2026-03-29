@@ -27,8 +27,11 @@ public class MinimalApiIntegrationTests(WebApplicationFactory<Program> factory) 
         var result = await response.Content.ReadFromJsonAsync<Result<Employee>>(_jsonOptions);
         
         Assert.NotNull(result);
-        result.Should().BeSuccess()
-            .HaveData(e => e?.FullName == "The Boss");
+        result.Should().BeSuccess();
+        
+        // Using ValueOrThrow in tests is a clean way to get data after assertion
+        var employee = result.ValueOrThrow();
+        Assert.Equal("The Boss", employee.FullName);
     }
 
     [Fact]

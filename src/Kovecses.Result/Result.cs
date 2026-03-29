@@ -160,16 +160,27 @@ public class Result
             return failures[0];
         }
 
-        var errors = failures
-            .Select(f => f.Error!)
-            .GroupBy(e => e.Code)
-            .ToDictionary(
-                g => g.Key,
-                g => (object)g.Select(e => e.Message).ToList());
+        var mergedMetadata = new Dictionary<string, object>();
 
-        return Error.Validation(errors, "Multiple errors occurred during the operation.");
-    }
-}
+        foreach (var failure in failures)
+        {
+            var error = failure.Error!;
+
+            if (error.Metadata != null)
+            {
+                foreach (var kvp in error.Metadata)
+                {
+                    mergedMetadata[kvp.Key] = kvp.Value;
+                }
+            }
+            else
+            {
+                mergedMetadata[error.Code] = error.Message;
+            }
+        }
+
+        return Error.Validation(mergedMetadata, "Multiple errors occurred during the operation.");
+    }}
 
 /// <summary>
 /// Represents the result of an operation that returns a value on success.

@@ -12,7 +12,15 @@ GET {{Host}}/employees/1/wrapped
 # Returns 404 Not Found as a standard ProblemDetails object
 GET {{Host}}/employees/99
 
-### 4. Create Employee - Success
+### 4. Get Employee Name (ValueOrDefault Demo)
+# Returns 200 OK with "The Boss"
+GET {{Host}}/employees/1/name
+
+### 5. Get Employee Name - Not Found (ValueOrDefault Demo)
+# Returns 200 OK with "Unknown Employee" fallback
+GET {{Host}}/employees/99/name
+
+### 6. Create Employee - Success
 # Returns 201 Created with the new employee data
 POST {{Host}}/employees
 Content-Type: application/json
@@ -22,17 +30,17 @@ Content-Type: application/json
   "position": "Lead Singer"
 }
 
-### 5. Create Employee - Validation Error (Custom Code: Employee.NameTooShort)
-# Returns 400 Bad Request with Validation ProblemDetails
+### 7. Create Employee - Multiple Validation Errors (Combine Demo)
+# Returns 400 Bad Request with all validation errors in the body
 POST {{Host}}/employees
 Content-Type: application/json
 
 {
-  "fullName": "Jo",
-  "position": "Intern"
+  "fullName": "",
+  "position": ""
 }
 
-### 6. Create Employee - Conflict Error
+### 8. Create Employee - Conflict Error
 # Returns 409 Conflict with standard ProblemDetails
 POST {{Host}}/employees
 Content-Type: application/json
@@ -42,21 +50,21 @@ Content-Type: application/json
   "position": "Duplicate"
 }
 
-### 7. Update Employee - Success
-# Returns 204 No Content on success
-PUT {{Host}}/employees/1
+### 9. Update Employee - Success (Async Chaining Demo)
+# Returns 200 OK with the updated EmployeeDto
+PUT {{Host}}/employees/2
 Content-Type: application/json
 
 {
-  "id": 1,
-  "fullName": "The Real Boss",
-  "position": "Chief Executive Officer"
+  "id": 2,
+  "fullName": "Jane Senior",
+  "position": "Senior Product Manager"
 }
 
-### 8. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
+### 10. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
 # Returns 400 Bad Request (ErrorType.Failure) with custom message and code
 DELETE {{Host}}/employees/1
 
-### 9. Delete Employee - Success
+### 11. Delete Employee - Success
 # Returns 204 No Content on success
 DELETE {{Host}}/employees/2

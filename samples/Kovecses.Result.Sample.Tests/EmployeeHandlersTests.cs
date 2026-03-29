@@ -55,4 +55,25 @@ public class EmployeeHandlersTests
         result.Should().HaveError()
             .HaveMessage("The primary administrator (The Boss) cannot be deleted from the system.");
     }
+
+    [Fact]
+    public async Task HandleAsync_UpdateEmployee_ShouldReturnSuccessWithMetadata()
+    {
+        // Arrange
+        var command = new UpdateEmployeeCommand(2, "Jane Updated", "Senior PM");
+
+        // Act
+        var result = await _sut.HandleAsync(command, default);
+
+        // Assert
+        result.Should().BeSuccess();
+        
+        // Clean data access in tests
+        var dto = result.ValueOrThrow();
+        Assert.Equal("Jane Updated", dto.DisplayName);
+        
+        // Asserting success metadata
+        Assert.NotNull(result.Metadata);
+        Assert.True(result.Metadata.ContainsKey("Audit.Timestamp"));
+    }
 }

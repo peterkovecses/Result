@@ -293,7 +293,7 @@ public class ResultTests
     }
 
     [Fact]
-    public void Combine_WhenMultipleFailures_ShouldAggregateErrors()
+    public void Combine_WhenMultipleFailures_ShouldAggregateErrorsAndMergeMetadata()
     {
         // Arrange
         var error1 = Error.Validation(new Dictionary<string, object> { { "F1", "E1" } }, code: "V.1");
@@ -304,8 +304,8 @@ public class ResultTests
 
         // Assert
         result.Should().BeFailure().HaveErrorCode(ErrorCodes.Validation);
-        result.Should().HaveError().HaveMetadata("V.1");
-        result.Should().HaveError().HaveMetadata("C.2");
+        result.Should().HaveError().HaveMetadata("F1", "E1"); // From validation error's metadata
+        result.Should().HaveError().HaveMetadata("C.2", "F2"); // From failure error's code/message
     }
 
     [Fact]

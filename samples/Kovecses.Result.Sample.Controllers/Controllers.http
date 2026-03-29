@@ -42,21 +42,31 @@ Content-Type: application/json
   "position": "Duplicate"
 }
 
-### 7. Update Employee - Success
-# Returns 204 No Content on success
-PUT {{Host}}/employees/1
+### 7. Create Employee - Multiple Validation Errors (Combine Demo)
+# Returns 400 Bad Request with all validation errors in the body
+POST {{Host}}/employees
 Content-Type: application/json
 
 {
-  "id": 1,
-  "fullName": "The Real Boss",
-  "position": "Chief Executive Officer"
+  "fullName": "",
+  "position": ""
 }
 
-### 8. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
+### 8. Update Employee - Success (Returns DTO + Custom Metadata Header)
+# Returns 200 OK with EmployeeDto and 'X-Audit-Time' header
+PUT {{Host}}/employees/2
+Content-Type: application/json
+
+{
+  "id": 2,
+  "fullName": "Jane Senior",
+  "position": "Senior Product Manager"
+}
+
+### 9. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
 # Returns 400 Bad Request (ErrorType.Failure) with custom message and code
 DELETE {{Host}}/employees/1
 
-### 9. Delete Employee - Success
+### 10. Delete Employee - Success
 # Returns 204 No Content on success
 DELETE {{Host}}/employees/2

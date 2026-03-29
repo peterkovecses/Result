@@ -33,12 +33,18 @@ public class EmployeesController(IMediator mediator) : ControllerBase
             _ => result.ToActionResult());
     }
 
-    // 4. Put - Standard REST (No content on success)
+    // 4. Put - Standard REST (Returns DTO and custom headers from Metadata)
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateEmployeeCommand command, CancellationToken ct)
     {
         if (id != command.Id) return BadRequest("ID mismatch");
+
         var result = await mediator.SendAsync(command, ct);
+        
+        if (result.IsSuccess && result.Metadata?.TryGetValue("Audit.Timestamp", out var timestamp) == true)
+        {
+            Response.Headers.Append("X-Audit-Time", timestamp.ToString());
+        }
 
         return result.ToActionResult();
     }

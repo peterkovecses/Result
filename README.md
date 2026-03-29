@@ -183,25 +183,25 @@ Result<EmployeeDto> dto = result.Map(e => new EmployeeDto(e.Id, e.FullName));
 Chain multiple result-returning operations. If any step fails, the entire chain returns the failure.
 
 ```csharp
-public async Task<Result> UpdateEmployee(int id, UpdateRequest request)
+public async Task<Result<EmployeeDto>> UpdateEmployee(int id, UpdateRequest request)
 {
-    return await _repository.GetByIdAsync(id)           // Returns Task<Result<Employee>>
-        .BindAsync(employee => {                        // Execute if GetByIdAsync succeeded
-            employee.Update(request);
-            return _repository.UpdateAsync(employee);   // Returns Task<Result>
-        });
+    return await _repository.GetByIdAsync(id)           // Task<Result<Employee>>
+        .BindAsync(employee => UpdateInternal(employee, request)) // Task<Result<Employee>>
+        .MapAsync(employee => new EmployeeDto(employee.Id, employee.FullName));
 }
 ```
 
 ### Async Chaining (Task Extensions)
-You can chain operations directly on `Task<Result>` or `Task<Result<T>>` without manual `await` at each step. This makes asynchronous "railway-oriented" pipelines much cleaner.
+You can chain operations directly on `Task<Result>` or `Task<Result<T>>` without manual `await` at each step. This makes asynchronous "railway-oriented" pipelines much cleaner. The `AspNetCore` package also provides extensions for `Error` objects to facilitate this.
 
 ```csharp
 // Chain multiple async operations seamlessly
 return await _repository.GetByIdAsync(id)               // Task<Result<Employee>>
     .BindAsync(employee => _service.Validate(employee)) // Task<Result<Employee>>
     .BindAsync(employee => _repository.Update(employee))// Task<Result>
-    .MatchAsync(() => Results.NoContent(), error => error.ToMinimalApiResult());
+    .MatchAsync(
+        () => Results.NoContent(), 
+        error => error.ToMinimalApiResult());           // Extension on Error type
 ```
 
 ### Combining Results (Error Accumulation)

@@ -92,6 +92,20 @@ public static class ResultExtensions
             : new OkObjectResult(result.Data);
     }
 
+    /// <summary>
+    /// Converts an <see cref="Error"/> to an <see cref="IResult"/> for Minimal APIs.
+    /// </summary>
+    /// <param name="error">The error to convert.</param>
+    /// <returns>An <see cref="IResult"/> representing the error.</returns>
+    public static IResult ToMinimalApiResult(this Error error) => MapToProblem(Result.Failure(error), false);
+
+    /// <summary>
+    /// Converts an <see cref="Error"/> to an <see cref="IActionResult"/> for Controllers.
+    /// </summary>
+    /// <param name="error">The error to convert.</param>
+    /// <returns>An <see cref="IActionResult"/> representing the error.</returns>
+    public static IActionResult ToActionResult(this Error error) => MapToActionResultProblem(Result.Failure(error), false);
+
     private static IResult MapToProblem(Result result, bool includeResultInResponse)
     {
         var error = result.Error ?? throw new InvalidOperationException("Failure result must have an error.");

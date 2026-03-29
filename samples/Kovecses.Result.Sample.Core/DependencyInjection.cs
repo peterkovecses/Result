@@ -12,7 +12,7 @@ public static class DependencyInjection
         // Register handlers
         services.AddTransient<IRequestHandler<GetEmployeeQuery, Result<Employee>>, EmployeeHandlers>();
         services.AddTransient<IRequestHandler<CreateEmployeeCommand, Result<Employee>>, EmployeeHandlers>();
-        services.AddTransient<IRequestHandler<UpdateEmployeeCommand, Result>, EmployeeHandlers>();
+        services.AddTransient<IRequestHandler<UpdateEmployeeCommand, Result<EmployeeDto>>, EmployeeHandlers>();
         services.AddTransient<IRequestHandler<DeleteEmployeeCommand, Result>, EmployeeHandlers>();
         
         return services;

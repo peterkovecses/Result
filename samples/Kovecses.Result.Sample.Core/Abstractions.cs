@@ -6,6 +6,11 @@ namespace Kovecses.Result.Sample.Core;
 public record Employee(int Id, string FullName, string Position);
 
 /// <summary>
+/// Data Transfer Object for Employee.
+/// </summary>
+public record EmployeeDto(int Id, string DisplayName, string JobTitle);
+
+/// <summary>
 /// Marker interface for a request that returns a Result.
 /// </summary>
 public interface IRequest<TResult> where TResult : Result;
@@ -68,10 +73,20 @@ public class Mediator(IServiceProvider serviceProvider) : IMediator
             {
                 if (!typeof(TResult).IsGenericType) return (TResult)validationResult;
                 var dataType = typeof(TResult).GetGenericArguments()[0];
-                return (TResult)typeof(Result).GetMethods()
-                    .First(m => m.Name == nameof(Result.Failure) && m.IsGenericMethod && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(Error))
+                
+                var failureMethod = typeof(Result).GetMethods()
+                    .First(m => m.Name == nameof(Result.Failure) && 
+                                m.IsGenericMethod && 
+                                m.GetParameters().Any() && 
+                                m.GetParameters()[0].ParameterType == typeof(Error));
+
+                var methodParams = failureMethod.GetParameters().Length == 1 
+                    ? new object[] { validationResult.Error! } 
+                    : [validationResult.Error!, null!];
+
+                return (TResult)failureMethod
                     .MakeGenericMethod(dataType)
-                    .Invoke(null, [validationResult.Error])!;
+                    .Invoke(null, methodParams)!;
             }
         }
 
