@@ -203,3 +203,19 @@ return await _repository.GetByIdAsync(id)               // Task<Result<Employee>
     .BindAsync(employee => _repository.Update(employee))// Task<Result>
     .MatchAsync(() => Results.NoContent(), error => error.ToMinimalApiResult());
 ```
+
+### Combining Results (Error Accumulation)
+Use `Result.Combine` to aggregate multiple results. If any result failed, it returns a validation error containing all failure information. This is particularly useful for validation scenarios where you want to report all issues at once.
+
+```csharp
+var result = Result.Combine(
+    ValidateName(request.FullName),
+    ValidatePosition(request.Position),
+    CheckPermissions(user)
+);
+
+if (result.IsFailure) 
+{
+    // result.Error is a Validation error containing all codes and messages
+}
+```

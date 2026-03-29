@@ -268,4 +268,43 @@ public class ResultTests
         // Assert
         bound.Should().BeSuccess().HaveData("10");
     }
+
+    [Fact]
+    public void Combine_WhenAllSuccess_ShouldReturnSuccess()
+    {
+        // Act
+        var result = Result.Combine(Result.Success(), Result.Success<int>(10));
+
+        // Assert
+        result.Should().BeSuccess();
+    }
+
+    [Fact]
+    public void Combine_WhenOneFailure_ShouldReturnThatFailure()
+    {
+        // Arrange
+        var error = Error.NotFound();
+        
+        // Act
+        var result = Result.Combine(Result.Success(), Result.Failure(error));
+
+        // Assert
+        result.Should().BeFailure().HaveErrorCode(error.Code);
+    }
+
+    [Fact]
+    public void Combine_WhenMultipleFailures_ShouldAggregateErrors()
+    {
+        // Arrange
+        var error1 = Error.Validation(new Dictionary<string, object> { { "F1", "E1" } }, code: "V.1");
+        var error2 = Error.Failure("F2", "C.2");
+
+        // Act
+        var result = Result.Combine(Result.Failure(error1), Result.Failure(error2));
+
+        // Assert
+        result.Should().BeFailure().HaveErrorCode(ErrorCodes.Validation);
+        result.Should().HaveError().HaveMetadata("V.1");
+        result.Should().HaveError().HaveMetadata("C.2");
+    }
 }

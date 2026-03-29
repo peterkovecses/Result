@@ -33,8 +33,8 @@ employeesGroup.MapPost("/", async (CreateEmployeeCommand command, IMediator medi
 employeesGroup.MapPut("/{id:int}", async (int id, UpdateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
 {
     if (id != command.Id) return Results.BadRequest("ID mismatch");
-    
     var result = await mediator.SendAsync(command, ct);
+    
     return result.ToMinimalApiResult();
 });
 

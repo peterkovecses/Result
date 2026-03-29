@@ -126,29 +126,52 @@ public class Result
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
     public async Task<Result> BindAsync(Func<Task<Result>> next)
         => IsSuccess ? await next() : this;
+
+    /// <summary>
+    /// Combines multiple results into a single result.
+    /// </summary>
+    /// <param name="results">The results to combine.</param>
+    /// <returns>A successful result if all inputs are successful, otherwise a failed result containing all errors.</returns>
+    public static Result Combine(params Result[] results)
+    {
+        var failures = results.Where(r => r.IsFailure).ToList();
+        if (failures.Count == 0)
+        {
+            return Success();
+        }
+
+        if (failures.Count == 1)
+        {
+            return failures[0];
+        }
+
+        var errors = failures
+            .Select(f => f.Error!)
+            .GroupBy(e => e.Code)
+            .ToDictionary(
+                g => g.Key,
+                g => (object)g.Select(e => e.Message).ToList());
+
+        return Error.Validation(errors, "Multiple errors occurred during the operation.");
+    }
 }
 
 /// <summary>
 /// Represents the result of an operation that returns a value on success.
 /// </summary>
 /// <typeparam name="TData">The type of the data returned on success.</typeparam>
-public class Result<TData> : Result
+/// <remarks>
+/// Initializes a new instance of the <see cref="Result{TData}"/> class.
+/// </remarks>
+/// <param name="data">The data returned on success.</param>
+/// <param name="error">The error if the operation failed, otherwise null.</param>
+[method: JsonConstructor]
+public class Result<TData>(TData? data, Error? error) : Result(error)
 {
     /// <summary>
     /// Gets the data returned on success, or null if the operation failed.
     /// </summary>
-    public TData? Data { get; init; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Result{TData}"/> class.
-    /// </summary>
-    /// <param name="data">The data returned on success.</param>
-    /// <param name="error">The error if the operation failed, otherwise null.</param>
-    [JsonConstructor]
-    public Result(TData? data, Error? error) : base(error)
-    {
-        Data = data;
-    }
+    public TData? Data { get; init; } = data;
 
     /// <summary>
     /// Implicitly converts data to a successful <see cref="Result{TData}"/>.

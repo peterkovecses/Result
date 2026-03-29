@@ -7,20 +7,25 @@ public sealed class CreateEmployeeValidator : IValidator<CreateEmployeeCommand>
 {
     public Task<Result> ValidateAsync(CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
+        var results = new List<Result>();
+
         if (string.IsNullOrWhiteSpace(request.FullName))
         {
-            return Task.FromResult<Result>(Error.Validation(
-                new Dictionary<string, object> { { "FullName", "Name is required." } }));
+            results.Add(Error.Validation(new Dictionary<string, object> { { "FullName", "Name is required." } }));
         }
-
-        if (request.FullName.Length < 3)
+        else if (request.FullName.Length < 3)
         {
-            return Task.FromResult<Result>(Error.Validation(
+            results.Add(Error.Validation(
                 errors: new Dictionary<string, object> { { "FullName", "Name is too short." } },
                 message: "The provided name does not meet the minimum length requirements.",
                 code: EmployeeErrorCodes.NameTooShort));
         }
 
-        return Task.FromResult(Result.Success());
+        if (string.IsNullOrWhiteSpace(request.Position))
+        {
+            results.Add(Error.Validation(new Dictionary<string, object> { { "Position", "Position is required." } }));
+        }
+
+        return Task.FromResult(Result.Combine(results.ToArray()));
     }
 }
