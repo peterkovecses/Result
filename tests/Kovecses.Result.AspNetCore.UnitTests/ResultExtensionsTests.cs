@@ -116,6 +116,7 @@ public class ResultExtensionsTests
     [InlineData(ErrorType.Forbidden, StatusCodes.Status403Forbidden)]
     [InlineData(ErrorType.Timeout, StatusCodes.Status408RequestTimeout)]
     [InlineData(ErrorType.Unexpected, StatusCodes.Status500InternalServerError)]
+    [InlineData(ErrorType.Canceled, StatusCodes.Status400BadRequest)]
     public void ToMinimalApiResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
     {
         // Arrange
@@ -250,6 +251,7 @@ public class ResultExtensionsTests
     [InlineData(ErrorType.Forbidden, StatusCodes.Status403Forbidden)]
     [InlineData(ErrorType.Timeout, StatusCodes.Status408RequestTimeout)]
     [InlineData(ErrorType.Unexpected, StatusCodes.Status500InternalServerError)]
+    [InlineData(ErrorType.Canceled, StatusCodes.Status400BadRequest)]
     public void ToActionResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
     {
         // Arrange

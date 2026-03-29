@@ -1,5 +1,3 @@
-using Kovecses.Result.FluentAssertions;
-
 namespace Kovecses.Result.UnitTests;
 
 public class ErrorTests
@@ -125,5 +123,16 @@ public class ErrorTests
         // Assert
         error.Should().HaveCode(ErrorCodes.Unexpected)
             .HaveType(ErrorType.Unexpected);
+    }
+
+    [Fact]
+    public void Canceled_WhenCalled_ShouldUseCorrectDefaults()
+    {
+        // Act
+        var error = Error.Canceled();
+
+        // Assert
+        error.Should().HaveCode(ErrorCodes.Canceled)
+            .HaveType(ErrorType.Canceled);
     }
 }

@@ -76,4 +76,25 @@ public class EmployeeHandlersTests
         Assert.NotNull(result.Metadata);
         Assert.True(result.Metadata.ContainsKey("Audit.Timestamp"));
     }
+
+    [Fact]
+    public async Task CreateEmployeeValidator_WhenInputIsInvalid_ShouldReturnValidationErrors()
+    {
+        // Arrange
+        var validator = new CreateEmployeeValidator();
+        var command = new CreateEmployeeCommand("", ""); // Invalid name and position
+
+        // Act
+        var result = await validator.ValidateAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveErrorCode(ErrorCodes.Validation);
+
+        result.Should().HaveValidationErrorFor("FullName")
+            .Contain("required");
+
+        result.Should().HaveValidationErrorFor("Position")
+            .Contain("required");
+    }
 }

@@ -136,6 +136,7 @@ The library generates a standardized `ProblemDetails` response by mapping `Error
 | Unauthorized| 401 | Authentication required |
 | Forbidden | 403 | Insufficient permissions |
 | Timeout | 408 | Request timeout |
+| Canceled | 400 | Operation was canceled |
 | Unexpected| 500 | Internal server error |
 
 ### Mapping Strategies
@@ -178,6 +179,11 @@ public void Test_Operation()
     // Assert Failure with specific code and message
     result.Should().BeFailure()
         .HaveErrorCode(ErrorCodes.NotFound);
+        
+    // Assert Validation Errors for specific fields
+    result.Should().HaveValidationErrorFor("Email")
+        .Contain("invalid")
+        .Contain("format");
         
     result.Should().HaveError()
         .HaveMessage("Not found.");

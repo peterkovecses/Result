@@ -161,6 +161,7 @@ public static class ResultExtensions
         ErrorType.Forbidden => StatusCodes.Status403Forbidden,
         ErrorType.Timeout => StatusCodes.Status408RequestTimeout,
         ErrorType.Unexpected => StatusCodes.Status500InternalServerError,
+        ErrorType.Canceled => StatusCodes.Status400BadRequest,
         _ => StatusCodes.Status400BadRequest
     };
 
@@ -173,6 +174,7 @@ public static class ResultExtensions
         ErrorType.Forbidden => "Forbidden",
         ErrorType.Timeout => "Request Timeout",
         ErrorType.Unexpected => "Internal Server Error",
+        ErrorType.Canceled => "Operation Canceled",
         _ => "Bad Request"
     };
 }

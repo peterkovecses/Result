@@ -44,4 +44,9 @@ public static class ErrorCodes
     /// A timeout error code.
     /// </summary>
     public const string Timeout = "General.Timeout";
+
+    /// <summary>
+    /// A canceled operation error code.
+    /// </summary>
+    public const string Canceled = "General.Canceled";
 }

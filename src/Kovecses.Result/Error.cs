@@ -45,7 +45,12 @@ public enum ErrorType
     /// <summary>
     /// The operation has timed out. (Maps to HTTP 408 RequestTimeout)
     /// </summary>
-    Timeout = 7
+    Timeout = 7,
+
+    /// <summary>
+    /// The operation was canceled. (Maps to HTTP 400 BadRequest or custom handling)
+    /// </summary>
+    Canceled = 8
 }
 
 /// <summary>
@@ -142,4 +147,10 @@ public record Error
     /// </summary>
     public static Error Unexpected(string message = "An unexpected error occurred while processing your request.", string code = ErrorCodes.Unexpected)
         => new(code, message, ErrorType.Unexpected);
+
+    /// <summary>
+    /// Creates a "Canceled" error.
+    /// </summary>
+    public static Error Canceled(string message = "The operation was canceled.", string code = ErrorCodes.Canceled)
+        => new(code, message, ErrorType.Canceled);
 }

@@ -63,6 +63,22 @@ public class ResultAssertions(Result subject)
         
         return new ErrorAssertions(Subject.Error);
     }
+
+    /// <summary>
+    /// Asserts that the result has a validation error for the specified field.
+    /// </summary>
+    /// <param name="fieldName">The name of the field.</param>
+    /// <returns>A <see cref="ValidationAssertions"/> object for further assertions.</returns>
+    public ValidationAssertions HaveValidationErrorFor(string fieldName)
+    {
+        BeFailure();
+        Assert.Equal(ErrorType.Validation, Subject.Error!.Type);
+        
+        var messages = ValidationHelper.ExtractMessages(Subject.Error!, fieldName);
+        Assert.NotEmpty(messages);
+        
+        return new ValidationAssertions(messages);
+    }
 }
 
 /// <summary>
@@ -124,5 +140,15 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
         Assert.True(predicate(_subject.Data), "The data does not match the expected predicate.");
         
         return this;
+    }
+
+    /// <summary>
+    /// Asserts that the result has a validation error for the specified field.
+    /// </summary>
+    /// <param name="fieldName">The name of the field.</param>
+    /// <returns>A <see cref="ValidationAssertions"/> object for further assertions.</returns>
+    public new ValidationAssertions HaveValidationErrorFor(string fieldName)
+    {
+        return base.HaveValidationErrorFor(fieldName);
     }
 }
