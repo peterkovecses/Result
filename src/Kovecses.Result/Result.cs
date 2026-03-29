@@ -143,6 +143,30 @@ public class Result
         => IsSuccess ? await next() : this;
 
     /// <summary>
+    /// Executes an action if the result is successful.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns>The current result.</returns>
+    public Result Tap(Action action)
+    {
+        if (IsSuccess) action();
+
+        return this;
+    }
+
+    /// <summary>
+    /// Asynchronously executes a function if the result is successful.
+    /// </summary>
+    /// <param name="func">The asynchronous function to execute.</param>
+    /// <returns>A task representing the current result.</returns>
+    public async Task<Result> TapAsync(Func<Task> func)
+    {
+        if (IsSuccess) await func();
+        
+        return this;
+    }
+
+    /// <summary>
     /// Combines multiple results into a single result.
     /// </summary>
     /// <param name="results">The results to combine.</param>
@@ -267,6 +291,28 @@ public class Result<TData>(TData? data, Error? error, Dictionary<string, object>
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
     public async Task<Result<TNewData>> BindAsync<TNewData>(Func<TData, Task<Result<TNewData>>> next)
         => IsSuccess ? await next(Data!) : Failure<TNewData>(Error!);
+
+    /// <summary>
+    /// Executes an action with the data if the result is successful.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns>The current result.</returns>
+    public Result<TData> Tap(Action<TData> action)
+    {
+        if (IsSuccess) action(Data!);
+        return this;
+    }
+
+    /// <summary>
+    /// Asynchronously executes a function with the data if the result is successful.
+    /// </summary>
+    /// <param name="func">The asynchronous function to execute.</param>
+    /// <returns>A task representing the current result.</returns>
+    public async Task<Result<TData>> TapAsync(Func<TData, Task> func)
+    {
+        if (IsSuccess) await func(Data!);
+        return this;
+    }
 
     /// <summary>
     /// Returns the data if the result is successful, otherwise throws an exception.

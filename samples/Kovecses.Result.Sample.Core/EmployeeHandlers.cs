@@ -60,7 +60,12 @@ public sealed class EmployeeHandlers :
                 Employees[index] = updated;
                 return await Task.FromResult(updated);
             })
-            .MapAsync(employee => new EmployeeDto(employee.Id, employee.FullName, employee.Position));
+            .MapAsync(employee => new EmployeeDto(employee.Id, employee.FullName, employee.Position))
+            .TapAsync(dto => {
+                // Simulating a side effect like logging or notifying other systems
+                Console.WriteLine($"[LOG] Employee updated: {dto.DisplayName} ({dto.JobTitle})");
+                return Task.CompletedTask;
+            });
 
         // Adding audit metadata if successful
         return result.IsSuccess 

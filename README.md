@@ -45,6 +45,10 @@ Result<UserDto> dto = result.Map(u => new UserDto(u.Id, u.Name));
 // Bind: Chain result-returning operations (FlatMap)
 return await GetUserAsync(id)
     .BindAsync(user => UpdateAsync(user));
+
+// Tap: Execute side effects (e.g., logging) without modifying the result
+result.Tap(data => Console.WriteLine($"Success: {data}"));
+await result.TapAsync(async data => await LogToDb(data));
 ```
 
 ### Async Chaining (Task Extensions)

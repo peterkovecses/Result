@@ -259,6 +259,66 @@ public class ResultTests
     }
 
     [Fact]
+    public void Tap_WhenSuccess_ShouldExecuteAction()
+    {
+        // Arrange
+        var result = Result.Success();
+        var executed = false;
+
+        // Act
+        var tapped = result.Tap(() => executed = true);
+
+        // Assert
+        Assert.True(executed);
+        tapped.Should().BeSuccess();
+    }
+
+    [Fact]
+    public async Task TapAsync_WhenSuccess_ShouldExecuteFunc()
+    {
+        // Arrange
+        var result = Result.Success();
+        var executed = false;
+
+        // Act
+        var tapped = await result.TapAsync(() => { executed = true; return Task.CompletedTask; });
+
+        // Assert
+        Assert.True(executed);
+        tapped.Should().BeSuccess();
+    }
+
+    [Fact]
+    public void TapGeneric_WhenSuccess_ShouldExecuteActionWithData()
+    {
+        // Arrange
+        var result = Result.Success(10);
+        var value = 0;
+
+        // Act
+        var tapped = result.Tap(data => value = data);
+
+        // Assert
+        Assert.Equal(10, value);
+        tapped.Should().BeSuccess().HaveData(10);
+    }
+
+    [Fact]
+    public async Task TapAsyncGeneric_WhenSuccess_ShouldExecuteFuncWithData()
+    {
+        // Arrange
+        var result = Result.Success(10);
+        var value = 0;
+
+        // Act
+        var tapped = await result.TapAsync(data => { value = data; return Task.CompletedTask; });
+
+        // Assert
+        Assert.Equal(10, value);
+        tapped.Should().BeSuccess().HaveData(10);
+    }
+
+    [Fact]
     public void Map_WhenSuccess_ShouldTransformData()
     {
         // Arrange

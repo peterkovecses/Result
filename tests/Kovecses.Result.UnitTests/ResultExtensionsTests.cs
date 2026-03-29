@@ -107,4 +107,34 @@ public class ResultExtensionsTests
         // Assert
         Assert.Equal("Failure", output);
     }
+
+    [Fact]
+    public async Task TapAsync_WithTaskResult_WhenSuccess_ShouldExecuteAction()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Success());
+        var executed = false;
+
+        // Act
+        var result = await task.TapAsync(() => executed = true);
+
+        // Assert
+        Assert.True(executed);
+        result.Should().BeSuccess();
+    }
+
+    [Fact]
+    public async Task TapAsync_WithTaskResultGeneric_WhenSuccess_ShouldExecuteActionWithData()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Success(10));
+        var value = 0;
+
+        // Act
+        var result = await task.TapAsync(data => value = data);
+
+        // Assert
+        Assert.Equal(10, value);
+        result.Should().BeSuccess().HaveData(10);
+    }
 }
