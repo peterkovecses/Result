@@ -181,12 +181,15 @@ public void Test_Operation()
         .HaveErrorCode(ErrorCodes.NotFound);
         
     // Assert Validation Errors for specific fields
-    result.Should().HaveValidationErrorFor("Email")
-        .Contain("invalid")
-        .Contain("format");
+    result.Should()
+        .HaveValidationErrorFor("Email").Contain("invalid").And
+        .HaveValidationErrorFor("Password").ContainAll("long", "digit");
         
-    result.Should().HaveError()
-        .HaveMessage("Not found.");
+    result.Should()
+        .HaveError()
+            .HaveCode("User.Disabled")
+            .HaveMessage("User is disabled.").And
+        .BeFailure();
 }
 ```
 

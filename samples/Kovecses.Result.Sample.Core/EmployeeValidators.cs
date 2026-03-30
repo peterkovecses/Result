@@ -7,25 +7,36 @@ public sealed class CreateEmployeeValidator : IValidator<CreateEmployeeCommand>
 {
     public Task<Result> ValidateAsync(CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
-        var results = new List<Result>();
+        var errors = new Dictionary<string, object>();
 
+        // FullName validation
         if (string.IsNullOrWhiteSpace(request.FullName))
         {
-            results.Add(Error.Validation(new Dictionary<string, object> { { "FullName", "Name is required." } }));
+            errors.Add("FullName", "Name is required.");
         }
-        else if (request.FullName.Length < 3)
+        else
         {
-            results.Add(Error.Validation(
-                errors: new Dictionary<string, object> { { "FullName", "Name is too short." } },
-                message: "The provided name does not meet the minimum length requirements.",
-                code: EmployeeErrorCodes.NameTooShort));
+            var nameErrors = new List<string>();
+            if (request.FullName.Length < 3) nameErrors.Add("Name is too short.");
+            if (!request.FullName.Contains(' ')) nameErrors.Add("Name must contain at least a first and last name separated by a space.");
+
+            if (nameErrors.Count > 0)
+            {
+                errors.Add("FullName", nameErrors);
+            }
         }
 
+        // Position validation
         if (string.IsNullOrWhiteSpace(request.Position))
         {
-            results.Add(Error.Validation(new Dictionary<string, object> { { "Position", "Position is required." } }));
+            errors.Add("Position", "Position is required.");
         }
 
-        return Task.FromResult(Result.Combine(results.ToArray()));
+        if (errors.Count > 0)
+        {
+            return Task.FromResult((Result)Error.Validation(errors));
+        }
+
+        return Task.FromResult(Result.Success());
     }
 }

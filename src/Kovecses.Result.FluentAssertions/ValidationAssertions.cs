@@ -14,7 +14,10 @@ namespace Kovecses.Result.FluentAssertions;
 [StackTraceHidden]
 public class ValidationAssertions(List<string> messages)
 {
-    private readonly List<string> _messages = messages;
+    /// <summary>
+    /// The validation error messages.
+    /// </summary>
+    protected List<string> SubjectMessages { get; } = messages;
 
     /// <summary>
     /// Asserts that at least one validation message contains the specified substring.
@@ -23,7 +26,7 @@ public class ValidationAssertions(List<string> messages)
     /// <returns>The <see cref="ValidationAssertions"/> for further assertions.</returns>
     public ValidationAssertions Contain(string substring)
     {
-        Assert.Contains(_messages, m => m.Contains(substring, StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(SubjectMessages, m => m.Contains(substring, StringComparison.OrdinalIgnoreCase));
         
         return this;
     }
@@ -46,7 +49,49 @@ public class ValidationAssertions(List<string> messages)
     /// <summary>
     /// Gets the underlying validation messages.
     /// </summary>
-    public IReadOnlyList<string> Messages => _messages;
+    public IReadOnlyList<string> Messages => SubjectMessages;
+}
+
+/// <summary>
+/// Provides fluent assertions for validation errors with chaining support.
+/// </summary>
+/// <typeparam name="TParent">The type of the parent assertions.</typeparam>
+/// <remarks>
+/// Initializes a new instance of the <see cref="ValidationAssertions{TParent}"/> class.
+/// </remarks>
+/// <param name="messages">The validation error messages.</param>
+/// <param name="parent">The parent assertions instance.</param>
+[StackTraceHidden]
+public class ValidationAssertions<TParent>(List<string> messages, TParent parent) : ValidationAssertions(messages) where TParent : ResultAssertions
+{
+    /// <summary>
+    /// Gets the parent assertions to allow chaining.
+    /// </summary>
+    public TParent And { get; } = parent;
+
+    /// <summary>
+    /// Asserts that at least one validation message contains the specified substring.
+    /// </summary>
+    /// <param name="substring">The substring to search for.</param>
+    /// <returns>The <see cref="ValidationAssertions{TParent}"/> for further assertions.</returns>
+    public new ValidationAssertions<TParent> Contain(string substring)
+    {
+        base.Contain(substring);
+        
+        return this;
+    }
+
+    /// <summary>
+    /// Asserts that the validation messages contain all the specified substrings.
+    /// </summary>
+    /// <param name="substrings">The substrings to search for.</param>
+    /// <returns>The <see cref="ValidationAssertions{TParent}"/> for further assertions.</returns>
+    public new ValidationAssertions<TParent> ContainAll(params string[] substrings)
+    {
+        base.ContainAll(substrings);
+
+        return this;
+    }
 }
 
 /// <summary>

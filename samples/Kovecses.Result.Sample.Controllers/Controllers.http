@@ -22,7 +22,7 @@ Content-Type: application/json
   "position": "Lead Singer"
 }
 
-### 5. Create Employee - Validation Error (Custom Code: Employee.NameTooShort)
+### 5. Create Employee - Validation Error (Multiple errors for FullName: Too short and no space)
 # Returns 400 Bad Request with Validation ProblemDetails
 POST {{Host}}/employees
 Content-Type: application/json

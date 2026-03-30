@@ -91,10 +91,26 @@ public class EmployeeHandlersTests
         result.Should().BeFailure()
             .HaveErrorCode(ErrorCodes.Validation);
 
-        result.Should().HaveValidationErrorFor("FullName")
-            .Contain("required");
+        result.Should()
+            .HaveValidationErrorFor("FullName").Contain("required").And
+            .HaveValidationErrorFor("Position").Contain("required");
+    }
 
-        result.Should().HaveValidationErrorFor("Position")
-            .Contain("required");
+    [Fact]
+    public async Task CreateEmployeeValidator_WhenNameIsTooShortAndNoSpace_ShouldReturnMultipleErrorsForField()
+    {
+        // Arrange
+        var validator = new CreateEmployeeValidator();
+        var command = new CreateEmployeeCommand("Jo", "Developer"); // Too short and no space
+
+        // Act
+        var result = await validator.ValidateAsync(command, default);
+
+        // Assert
+        result.Should()
+            .HaveValidationErrorFor("FullName")
+                .Contain("too short")
+                .Contain("space")
+                .ContainAll("short", "name");
     }
 }
