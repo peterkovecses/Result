@@ -283,5 +283,36 @@ public class ResultExtensionsTests
         problemDetails.Detail.ShouldBe("Error msg");
     }
 
+    [Fact]
+    public void ToMinimalApiResultGeneric_WhenFailure_ShouldReturnProblem()
+    {
+        // Arrange
+        var error = Error.Validation([]);
+        var result = Result.Failure<int>(error);
+
+        // Act
+        var apiResult = result.ToMinimalApiResult();
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact]
+    public void ToActionResult_WhenFailureAndIncludeResult_ShouldReturnObjectResultWithResult()
+    {
+        // Arrange
+        var error = Error.NotFound();
+        var result = Result.Failure(error);
+
+        // Act
+        var actionResult = result.ToActionResult(includeResultInResponse: true);
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        objectResult.Value.ShouldBe(result);
+    }
+
     #endregion
 }

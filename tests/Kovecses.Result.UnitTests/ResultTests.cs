@@ -455,7 +455,7 @@ public class ResultTests
         var result = Result.Failure<string>(Error.NotFound());
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => result.ValueOrThrow());
+        result.Should().ThrowOnValueAccess<InvalidOperationException>();
     }
 
     [Fact]
@@ -465,7 +465,7 @@ public class ResultTests
         var result = Result.Failure<string>(Error.NotFound());
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => result.ValueOrThrow(e => new ArgumentException(e.Code)));
+        result.Should().ThrowOnValueAccess<ArgumentException>(e => new ArgumentException(e.Code));
     }
 
     [Fact]
@@ -548,5 +548,169 @@ public class ResultTests
         Assert.NotNull(deserialized);
         deserialized.Should().BeSuccess().HaveData("Data");
         Assert.Equal("Legacy API", deserialized.Metadata!["Warning"].ToString());
+    }
+
+    [Fact]
+    public void Failure_WithMetadata_ShouldStoreMetadataInResult()
+    {
+        // Arrange
+        var error = Error.NotFound();
+        var metadata = new Dictionary<string, object> { { "Key", "Value" } };
+
+        // Act
+        var result = Result.Failure(error, metadata);
+
+        // Assert
+        result.Should().BeFailure().HaveMetadata("Key", "Value");
+    }
+
+    [Fact]
+    public void Failure_WithCodeMessageAndMetadata_ShouldStoreEverything()
+    {
+        // Arrange
+        const string code = "Code";
+        const string message = "Message";
+        var metadata = new Dictionary<string, object> { { "Key", "Value" } };
+
+        // Act
+        var result = Result.Failure(code, message, metadata);
+
+        // Assert
+        result.Should().BeFailure().HaveErrorCode(code).HaveMetadata("Key", "Value");
+    }
+
+    [Fact]
+    public void FailureGeneric_WithCodeMessageAndMetadata_ShouldStoreEverything()
+    {
+        // Arrange
+        const string code = "Code";
+        const string message = "Message";
+        var metadata = new Dictionary<string, object> { { "Key", "Value" } };
+
+        // Act
+        var result = Result.Failure<int>(code, message, metadata);
+
+        // Assert
+        result.Should().BeFailure().HaveErrorCode(code).HaveMetadata("Key", "Value");
+    }
+
+    [Fact]
+    public void FailureGeneric_WithErrorAndMetadata_ShouldStoreEverything()
+    {
+        // Arrange
+        var error = Error.NotFound();
+        var metadata = new Dictionary<string, object> { { "Key", "Value" } };
+
+        // Act
+        var result = Result.Failure<int>(error, metadata);
+
+        // Assert
+        result.Should().BeFailure().HaveErrorCode(error.Code).HaveMetadata("Key", "Value");
+    }
+
+    [Fact]
+    public async Task BindAsync_Result_WhenFailure_ShouldNotExecuteNext()
+    {
+        // Arrange
+        var result = Result.Failure(Error.NotFound());
+        var executed = false;
+
+        // Act
+        var bound = await result.BindAsync(() => { executed = true; return Task.FromResult(Result.Success()); });
+
+        // Assert
+        Assert.False(executed);
+        bound.Should().BeFailure();
+    }
+
+    [Fact]
+    public void Tap_WhenFailure_ShouldNotExecuteAction()
+    {
+        // Arrange
+        var result = Result.Failure(Error.NotFound());
+        var executed = false;
+
+        // Act
+        var tapped = result.Tap(() => executed = true);
+
+        // Assert
+        Assert.False(executed);
+        tapped.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task TapAsync_WhenFailure_ShouldNotExecuteFunc()
+    {
+        // Arrange
+        var result = Result.Failure(Error.NotFound());
+        var executed = false;
+
+        // Act
+        var tapped = await result.TapAsync(() => { executed = true; return Task.CompletedTask; });
+
+        // Assert
+        Assert.False(executed);
+        tapped.Should().BeFailure();
+    }
+
+    [Fact]
+    public void TapGeneric_WhenFailure_ShouldNotExecuteAction()
+    {
+        // Arrange
+        var result = Result.Failure<int>(Error.NotFound());
+        var executed = false;
+
+        // Act
+        var tapped = result.Tap(_ => executed = true);
+
+        // Assert
+        Assert.False(executed);
+        tapped.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task TapAsyncGeneric_WhenFailure_ShouldNotExecuteFunc()
+    {
+        // Arrange
+        var result = Result.Failure<int>(Error.NotFound());
+        var executed = false;
+
+        // Act
+        var tapped = await result.TapAsync(_ => { executed = true; return Task.CompletedTask; });
+
+        // Assert
+        Assert.False(executed);
+        tapped.Should().BeFailure();
+    }
+
+    [Fact]
+    public void Combine_WithZeroResults_ShouldReturnSuccess()
+    {
+        // Act
+        var result = Result.Combine();
+
+        // Assert
+        result.Should().BeSuccess();
+    }
+
+    [Fact]
+    public void Combine_WithOneSuccess_ShouldReturnSuccess()
+    {
+        // Act
+        var result = Result.Combine(Result.Success());
+
+        // Assert
+        result.Should().BeSuccess();
+    }
+
+    [Fact]
+    public void ValueOrThrow_WhenFailureWithNullFactory_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound());
+
+        // Act & Assert
+        var exception = result.Should().ThrowOnValueAccess<InvalidOperationException>(null);
+        Assert.Contains(ErrorCodes.NotFound, exception.Message);
     }
 }

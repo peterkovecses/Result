@@ -66,15 +66,29 @@ public class EmployeeHandlersTests
         var result = await _sut.HandleAsync(command, default);
 
         // Assert
-        result.Should().BeSuccess();
+        result.Should().BeSuccess()
+            .HaveMetadata("Audit.Timestamp");
         
         // Clean data access in tests
         var dto = result.ValueOrThrow();
         Assert.Equal("Jane Updated", dto.DisplayName);
-        
-        // Asserting success metadata
-        Assert.NotNull(result.Metadata);
-        Assert.True(result.Metadata.ContainsKey("Audit.Timestamp"));
+    }
+
+    [Fact]
+    public async Task HandleAsync_UpdateBossToPM_ShouldFailAndThrowOnValueAccess()
+    {
+        // Arrange
+        var command = new UpdateEmployeeCommand(1, "The Boss", "Product Manager"); // Demotion business rule
+
+        // Act
+        var result = await _sut.HandleAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveErrorCode(ErrorCodes.Conflict);
+
+        // Demonstrate ThrowOnValueAccess for safety checks in tests
+        result.Should().ThrowOnValueAccess<InvalidOperationException>();
     }
 
     [Fact]

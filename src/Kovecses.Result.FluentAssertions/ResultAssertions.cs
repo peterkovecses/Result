@@ -79,6 +79,52 @@ public class ResultAssertions(Result subject)
         
         return new ValidationAssertions<ResultAssertions>(messages, this);
     }
+
+    /// <summary>
+    /// Asserts that the result metadata contains the specified key.
+    /// </summary>
+    /// <param name="key">The metadata key.</param>
+    /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
+    public ResultAssertions HaveMetadata(string key)
+    {
+        Assert.NotNull(Subject.Metadata);
+        Assert.Contains(key, Subject.Metadata.Keys);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Asserts that the result metadata contains the specified key and value.
+    /// </summary>
+    /// <param name="key">The metadata key.</param>
+    /// <param name="expectedValue">The expected metadata value.</param>
+    /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
+    public ResultAssertions HaveMetadata(string key, object? expectedValue)
+    {
+        HaveMetadata(key);
+        var actualValue = Subject.Metadata![key];
+
+        if (actualValue is System.Text.Json.JsonElement element)
+        {
+            object? value = element.ValueKind switch
+            {
+                System.Text.Json.JsonValueKind.String => element.GetString(),
+                System.Text.Json.JsonValueKind.Number => element.GetDouble(),
+                System.Text.Json.JsonValueKind.True => true,
+                System.Text.Json.JsonValueKind.False => false,
+                System.Text.Json.JsonValueKind.Null => null,
+                _ => element.GetRawText()
+            };
+
+            Assert.Equal(expectedValue?.ToString(), value?.ToString());
+        }
+        else
+        {
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        return this;
+    }
 }
 
 /// <summary>
@@ -167,5 +213,43 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
         Assert.NotEmpty(messages);
         
         return new ValidationAssertions<ResultAssertions<TData>>(messages, this);
+    }
+
+    /// <summary>
+    /// Asserts that the result metadata contains the specified key.
+    /// </summary>
+    /// <param name="key">The metadata key.</param>
+    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
+    public new ResultAssertions<TData> HaveMetadata(string key)
+    {
+        base.HaveMetadata(key);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Asserts that the result metadata contains the specified key and value.
+    /// </summary>
+    /// <param name="key">The metadata key.</param>
+    /// <param name="expectedValue">The expected metadata value.</param>
+    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
+    public new ResultAssertions<TData> HaveMetadata(string key, object? expectedValue)
+    {
+        base.HaveMetadata(key, expectedValue);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Asserts that calling ValueOrThrow on the result throws an exception of the specified type.
+    /// </summary>
+    /// <typeparam name="TException">The type of the expected exception.</typeparam>
+    /// <param name="exceptionFactory">An optional factory to create the exception to throw.</param>
+    /// <returns>The caught exception for further assertions.</returns>
+    public TException ThrowOnValueAccess<TException>(Func<Error, Exception>? exceptionFactory = null) where TException : Exception
+    {
+        BeFailure();
+        
+        return Assert.Throws<TException>(() => _subject.ValueOrThrow(exceptionFactory));
     }
 }

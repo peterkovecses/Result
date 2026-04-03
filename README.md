@@ -185,11 +185,18 @@ public void Test_Operation()
         .HaveValidationErrorFor("Email").Contain("invalid").And
         .HaveValidationErrorFor("Password").ContainAll("long", "digit");
         
+    // Assert Metadata presence and values
+    result.Should().HaveMetadata("TraceId", "abc-123");
+
+    // Assert detailed Error properties and chain back to Result
     result.Should()
         .HaveError()
             .HaveCode("User.Disabled")
             .HaveMessage("User is disabled.").And
         .BeFailure();
+
+    // Assert that accessing data on a failure result throws the correct exception
+    result.Should().ThrowOnValueAccess<InvalidOperationException>();
 }
 ```
 

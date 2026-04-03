@@ -137,4 +137,118 @@ public class ResultExtensionsTests
         Assert.Equal(10, value);
         result.Should().BeSuccess().HaveData(10);
     }
+
+    [Fact]
+    public async Task BindAsync_Extension_WhenFailure_ShouldNotExecuteNext()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure(Error.NotFound()));
+        var executed = false;
+
+        // Act
+        var result = await task.BindAsync(() => { executed = true; return Task.FromResult(Result.Success()); });
+
+        // Assert
+        Assert.False(executed);
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task MapAsync_Extension_WhenFailure_ShouldReturnFailure()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure<int>(Error.NotFound()));
+
+        // Act
+        var result = await task.MapAsync(x => x * 2);
+
+        // Assert
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task MapAsync_Extension_TaskMapping_WhenFailure_ShouldReturnFailure()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure<int>(Error.NotFound()));
+
+        // Act
+        var result = await task.MapAsync(x => Task.FromResult(x * 2));
+
+        // Assert
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task BindAsync_ExtensionGeneric_WhenFailure_ShouldReturnFailure()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure<int>(Error.NotFound()));
+
+        // Act
+        var result = await task.BindAsync(x => Task.FromResult(Result.Success(x.ToString())));
+
+        // Assert
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task TapAsync_Extension_WhenFailure_ShouldNotExecuteAction()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure(Error.NotFound()));
+        var executed = false;
+
+        // Act
+        var result = await task.TapAsync(() => executed = true);
+
+        // Assert
+        Assert.False(executed);
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task TapAsync_Extension_TaskFunc_WhenFailure_ShouldNotExecuteFunc()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure(Error.NotFound()));
+        var executed = false;
+
+        // Act
+        var result = await task.TapAsync(() => { executed = true; return Task.CompletedTask; });
+
+        // Assert
+        Assert.False(executed);
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task TapAsync_ExtensionGeneric_WhenFailure_ShouldNotExecuteAction()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure<int>(Error.NotFound()));
+        var executed = false;
+
+        // Act
+        var result = await task.TapAsync(_ => executed = true);
+
+        // Assert
+        Assert.False(executed);
+        result.Should().BeFailure();
+    }
+
+    [Fact]
+    public async Task TapAsync_ExtensionGeneric_TaskFunc_WhenFailure_ShouldNotExecuteFunc()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure<int>(Error.NotFound()));
+        var executed = false;
+
+        // Act
+        var result = await task.TapAsync(_ => { executed = true; return Task.CompletedTask; });
+
+        // Assert
+        Assert.False(executed);
+        result.Should().BeFailure();
+    }
 }
