@@ -270,13 +270,30 @@ public class Result
 /// Represents the result of an operation that returns a value on success.
 /// </summary>
 /// <typeparam name="TData">The type of the data returned on success.</typeparam>
-[method: JsonConstructor]
-public class Result<TData>(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null) : Result(errors, metadata)
+public class Result<TData> : Result
 {
     /// <summary>
     /// Gets the data returned on success, or null if the operation failed.
     /// </summary>
-    public TData? Data { get; init; } = data;
+    public TData? Data { get; init; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Result{TData}"/> class.
+    /// </summary>
+    /// <param name="data">The data returned on success.</param>
+    /// <param name="errors">The errors if the operation failed, otherwise null.</param>
+    /// <param name="metadata">Optional metadata associated with the result.</param>
+    [JsonConstructor]
+    public Result(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null) 
+        : base(errors, metadata)
+    {
+        Data = data;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Result{TData}"/> class for success.
+    /// </summary>
+    protected Result() { }
 
     /// <summary>
     /// Implicitly converts data to a successful <see cref="Result{TData}"/>.

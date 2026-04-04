@@ -199,7 +199,7 @@ public IActionResult Create(User cmd) => _service.Create(cmd).ToActionResult();
 #### Wrapped Results (Internal/Typed Clients)
 Returns the full `Result` object in the body (e.g., for Blazor or Typed Clients).
 ```csharp
-// Returns: { "isSuccess": true, "errors": null, "metadata": { ... } }
+// Returns: { "errors": null, "metadata": { ... } }
 return result.ToMinimalApiResult(includeResultInResponse: true);
 ```
 

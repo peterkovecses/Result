@@ -1,19 +1,10 @@
-# Release v2.0.0
+# Release v2.1.0
 
-This is a major architectural overhaul focusing on type-safe multi-error handling, performance, and standard compliance.
+This release restores the POCO-friendly architecture from v1.x while maintaining the intentional multi-error collection support introduced in v2.0.0.
 
-## Breaking Changes
-- **Result Structure:** The `Error` property has been replaced with an `Errors` collection (`IReadOnlyList<Error>`).
-- **Validation Mapping:** `Error.Validation` now creates a flat error object (code and message) instead of using a metadata dictionary.
-- **Fluent Assertions:** Nearly all assertion methods have been updated to work with error collections. Use `.HaveError(code)` instead of `.HaveErrorCode(code)`.
-
-## New Features
-- **Multi-Error Support:** Results can now carry multiple errors simultaneously.
-- **Improved Combine:** `Result.Combine` now aggregates all errors from all input results into a single flat list.
-- **Automatic RFC 7807 Support:** `Kovecses.Result.AspNetCore` now automatically maps validation-only failures to `ValidationProblemDetails`.
-- **High Performance:** Introduced `FailureFactory<TResponse>` with cached delegates for near-instant generic result instantiation.
-- **String Enums:** `ErrorType` now serializes to readable strings (e.g., "Validation") by default.
-
-## Testing Enhancements
-- Added `ErrorCollectionAssertions` for verifying hibalista properties (count, types, etc.).
-- Deep chaining support for error properties in tests.
+## Improvements & Fixes
+- **POCO Compatibility:** Restored traditional class structure and protected parameterless constructors for `Result` and `Result<T>`.
+- **Serialization Neutrality:** Removed forced `JsonStringEnumConverter` from `ErrorType` to follow framework-level JSON defaults.
+- **Improved Deserialization:** Fixed an issue where `Result<T>` could not be deserialized correctly using `System.Text.Json` due to primary constructor usage.
+- **Documentation:** Updated README with accurate JSON examples reflecting serialized output.
+- **Sample Projects:** Removed manual JSON configurations from Sample and Test projects to remain neutral.

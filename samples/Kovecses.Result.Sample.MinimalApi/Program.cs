@@ -1,12 +1,5 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Standard practice for modern APIs: Use camelCase and string enums globally
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-});
-
 builder.Services.AddCore();
 var app = builder.Build();
 var employeesGroup = app.MapGroup("/employees").WithTags("Employees");

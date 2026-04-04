@@ -12,7 +12,6 @@ namespace Kovecses.Result.Sample.Tests;
 public class MinimalApiIntegrationTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client = factory.CreateClient();
-    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     [Fact]
     public async Task GetEmployeeWrapped_Existing_ShouldReturnSuccessfulResultObject()
@@ -24,7 +23,7 @@ public class MinimalApiIntegrationTests(WebApplicationFactory<Program> factory) 
         response.EnsureSuccessStatusCode();
         
         // We expect the body to be a serialized Result<Employee> object
-        var result = await response.Content.ReadFromJsonAsync<Result<Employee>>(_jsonOptions);
+        var result = await response.Content.ReadFromJsonAsync<Result<Employee>>();
         
         Assert.NotNull(result);
         result.Should().BeSuccess();
@@ -44,7 +43,7 @@ public class MinimalApiIntegrationTests(WebApplicationFactory<Program> factory) 
         // The API returns 404 but the body is a Result object because we used /wrapped
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
         
-        var result = await response.Content.ReadFromJsonAsync<Result<Employee>>(_jsonOptions);
+        var result = await response.Content.ReadFromJsonAsync<Result<Employee>>();
         
         Assert.NotNull(result);
         result.Should().BeFailure()

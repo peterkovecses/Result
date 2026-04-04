@@ -5,7 +5,6 @@ namespace Kovecses.Result;
 /// <summary>
 /// Defines the technical categories of errors to facilitate consistent handling (e.g., HTTP mapping).
 /// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ErrorType
 {
     /// <summary>
