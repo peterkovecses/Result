@@ -1,21 +1,14 @@
-# Release Notes - v2.3.0
-
-## 🚀 New Features
-
-**Built-in JSON Serialization Support**
-
-- Added custom `System.Text.Json` converters for `Result`, `Result<T>`, and `Error` types:
-  - Full support for direct API response deserialization
-  - Case-insensitive property matching
-  - Proper `Dictionary<string, object>` metadata handling
-  - Compatible with `JsonNamingPolicy.CamelCase` and other naming policies
+# Release Notes - v2.3.1
 
 ## 🐛 Bug Fixes
 
-- Fixed deserialization failure when API responses contained the `Result` object directly
-- Fixed `[JsonConstructor]` accessibility for `System.Text.Json`
-- Fixed metadata deserialization – values are now correctly typed instead of remaining as `JsonElement`
+- Improved JSON deserialization for cross-option compatibility
+- Fixed an issue where deserializing `Result<T>` with different `JsonSerializerOptions` than used for serialization would result in empty/default Data values.
+- The library now enforces case-insensitive property matching for all nested objects during deserialization, ensuring that:
+  - camelCase JSON can be deserialized with default (PascalCase) options
+  - PascalCase JSON can be deserialized with Web/camelCase options
+  - External API responses work regardless of the client's serializer configuration
 
 ## ⬆️ Upgrade Notes
 
-- Non-breaking update. The new JSON converters are automatically applied via `[JsonConverter]` attributes.
+- Non-breaking update. Fully backward compatible with v2.3.0.

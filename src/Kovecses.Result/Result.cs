@@ -43,10 +43,9 @@ public class Result
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result"/> class for deserialization.
+    /// Initializes a new instance of the <see cref="Result"/> class.
     /// </summary>
-    [JsonConstructor]
-    public Result()
+    protected Result()
     {
     }
 
@@ -160,9 +159,7 @@ public class Result
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>The result of the executed function.</returns>
     public TResult Match<TResult>(Func<TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
-        => IsSuccess
-            ? onSuccess()
-            : onFailure(Errors!);
+        => IsSuccess ? onSuccess() : onFailure(Errors!);
 
     /// <summary>
     /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
@@ -171,10 +168,8 @@ public class Result
     /// <param name="onSuccess">The function to execute on success.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public async Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
-        => IsSuccess
-            ? await onSuccess()
-            : await onFailure(Errors!);
+    public Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
+        => IsSuccess ? onSuccess() : onFailure(Errors!);
 
     /// <summary>
     /// Chains another operation if the current result is successful.
@@ -182,19 +177,15 @@ public class Result
     /// <param name="next">The next operation to execute.</param>
     /// <returns>The result of the next operation, or the current failure.</returns>
     public Result Bind(Func<Result> next)
-        => IsSuccess
-            ? next()
-            : this;
+        => IsSuccess ? next() : this;
 
     /// <summary>
     /// Asynchronously chains another operation if the current result is successful.
     /// </summary>
     /// <param name="next">The next operation to execute.</param>
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
-    public async Task<Result> BindAsync(Func<Task<Result>> next)
-        => IsSuccess
-            ? await next()
-            : this;
+    public Task<Result> BindAsync(Func<Task<Result>> next)
+        => IsSuccess ? next() : Task.FromResult(this);
 
     /// <summary>
     /// Executes an action if the result is successful.
@@ -204,7 +195,6 @@ public class Result
     public Result Tap(Action action)
     {
         if (IsSuccess) action();
-
         return this;
     }
 
@@ -216,7 +206,6 @@ public class Result
     public async Task<Result> TapAsync(Func<Task> func)
     {
         if (IsSuccess) await func();
-
         return this;
     }
 
@@ -237,23 +226,22 @@ public class Result
 
     private static class FailureFactory<TResponse> where TResponse : Result
     {
-        public static readonly Func<IReadOnlyList<Error>, TResponse> Create;
+        public static readonly Func<IReadOnlyList<Error>, TResponse> Create = BuildFactory();
 
-        static FailureFactory()
+        private static Func<IReadOnlyList<Error>, TResponse> BuildFactory()
         {
             var responseType = typeof(TResponse);
 
             if (responseType == typeof(Result))
             {
-                Create = errs => (TResponse)(object)Failure(errs);
-
-                return;
+                return errs => (TResponse)(object)Failure(errs);
             }
 
             if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
             {
                 var dataType = responseType.GetGenericArguments()[0];
-                var method = typeof(Result).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                var method = typeof(Result)
+                    .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
                     .First(m => m.Name == nameof(Failure) &&
                                 m.IsGenericMethod &&
                                 m.GetParameters().Length == 2 &&
@@ -261,15 +249,14 @@ public class Result
                                 m.GetParameters()[1].ParameterType == typeof(Dictionary<string, object>))
                     .MakeGenericMethod(dataType);
 
-                var func = (Func<IEnumerable<Error>, Dictionary<string, object>?, TResponse>)Delegate.CreateDelegate(
-                    typeof(Func<IEnumerable<Error>, Dictionary<string, object>?, TResponse>), method);
+                var func = (Func<IEnumerable<Error>, Dictionary<string, object>?, TResponse>)
+                    Delegate.CreateDelegate(typeof(Func<IEnumerable<Error>, Dictionary<string, object>?, TResponse>), method);
 
-                Create = errs => func(errs, null);
-
-                return;
+                return errs => func(errs, null);
             }
 
-            throw new InvalidOperationException($"Cannot create failure response for type {responseType.FullName}. Only Result and Result<T> are supported.");
+            throw new InvalidOperationException(
+                $"Cannot create failure response for type {responseType.FullName}. Only Result and Result<T> are supported.");
         }
     }
 }
@@ -299,17 +286,16 @@ public class Result<TData> : Result
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result{TData}"/> class for deserialization.
+    /// Initializes a new instance of the <see cref="Result{TData}"/> class.
     /// </summary>
-    [JsonConstructor]
-    public Result()
+    protected Result()
     {
     }
 
     /// <summary>
     /// Internal factory method to create a <see cref="Result{TData}"/> instance.
     /// </summary>
-    internal static Result<TData> Create(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata) => new Result<TData>
+    internal static Result<TData> Create(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata) => new()
     {
         Data = data,
         Errors = errors,
@@ -338,9 +324,7 @@ public class Result<TData> : Result
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>The result of the executed function.</returns>
     public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
-        => IsSuccess
-            ? onSuccess(Data!)
-            : onFailure(Errors!);
+        => IsSuccess ? onSuccess(Data!) : onFailure(Errors!);
 
     /// <summary>
     /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
@@ -349,10 +333,8 @@ public class Result<TData> : Result
     /// <param name="onSuccess">The function to execute on success with the data.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public async Task<TResult> MatchAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
-        => IsSuccess
-            ? await onSuccess(Data!)
-            : await onFailure(Errors!);
+    public Task<TResult> MatchAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
+        => IsSuccess ? onSuccess(Data!) : onFailure(Errors!);
 
     /// <summary>
     /// Transforms the success value of the result.
@@ -361,9 +343,7 @@ public class Result<TData> : Result
     /// <param name="map">The mapping function.</param>
     /// <returns>A new result with the transformed data, or the current failure.</returns>
     public Result<TNewData> Map<TNewData>(Func<TData, TNewData> map)
-        => IsSuccess
-            ? Success(map(Data!))
-            : Failure<TNewData>(Errors!);
+        => IsSuccess ? Success(map(Data!)) : Failure<TNewData>(Errors!);
 
     /// <summary>
     /// Asynchronously transforms the success value of the result.
@@ -372,9 +352,7 @@ public class Result<TData> : Result
     /// <param name="map">The asynchronous mapping function.</param>
     /// <returns>A task representing the new result with the transformed data, or the current failure.</returns>
     public async Task<Result<TNewData>> MapAsync<TNewData>(Func<TData, Task<TNewData>> map)
-        => IsSuccess
-            ? Success(await map(Data!))
-            : Failure<TNewData>(Errors!);
+        => IsSuccess ? Success(await map(Data!)) : Failure<TNewData>(Errors!);
 
     /// <summary>
     /// Chains another result-returning operation if the current result is successful.
@@ -383,9 +361,7 @@ public class Result<TData> : Result
     /// <param name="next">The next operation to execute.</param>
     /// <returns>The result of the next operation, or the current failure.</returns>
     public Result<TNewData> Bind<TNewData>(Func<TData, Result<TNewData>> next)
-        => IsSuccess
-            ? next(Data!)
-            : Failure<TNewData>(Errors!);
+        => IsSuccess ? next(Data!) : Failure<TNewData>(Errors!);
 
     /// <summary>
     /// Asynchronously chains another result-returning operation if the current result is successful.
@@ -393,10 +369,8 @@ public class Result<TData> : Result
     /// <typeparam name="TNewData">The type of the new result data.</typeparam>
     /// <param name="next">The next asynchronous operation to execute.</param>
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
-    public async Task<Result<TNewData>> BindAsync<TNewData>(Func<TData, Task<Result<TNewData>>> next)
-        => IsSuccess
-            ? await next(Data!)
-            : Failure<TNewData>(Errors!);
+    public Task<Result<TNewData>> BindAsync<TNewData>(Func<TData, Task<Result<TNewData>>> next)
+        => IsSuccess ? next(Data!) : Task.FromResult(Failure<TNewData>(Errors!));
 
     /// <summary>
     /// Executes an action with the data if the result is successful.
@@ -406,7 +380,6 @@ public class Result<TData> : Result
     public Result<TData> Tap(Action<TData> action)
     {
         if (IsSuccess) action(Data!);
-
         return this;
     }
 
@@ -418,7 +391,6 @@ public class Result<TData> : Result
     public async Task<Result<TData>> TapAsync(Func<TData, Task> func)
     {
         if (IsSuccess) await func(Data!);
-
         return this;
     }
 
@@ -432,7 +404,7 @@ public class Result<TData> : Result
     {
         if (IsSuccess) return Data!;
 
-        var errors = Errors ?? Array.Empty<Error>();
+        var errors = Errors ?? [];
         throw exceptionFactory?.Invoke(errors)
               ?? new InvalidOperationException($"Cannot access data of a failure result. Errors: {FormatErrors(errors)}");
     }
@@ -443,57 +415,122 @@ public class Result<TData> : Result
     /// <param name="defaultValue">The value to return if the result is a failure.</param>
     /// <returns>The data or the default value.</returns>
     public TData? ValueOrDefault(TData? defaultValue = default)
-        => IsSuccess
-            ? Data
-            : defaultValue;
+        => IsSuccess ? Data : defaultValue;
 
     private static string FormatErrors(IReadOnlyList<Error> errors)
-    {
-        if (errors.Count == 0) return "No errors provided";
-
-        return string.Join("; ", errors.Select(e => $"[{e.Code}] {e.Message}"));
-    }
+        => errors.Count == 0
+            ? "No errors provided"
+            : string.Join("; ", errors.Select(e => $"[{e.Code}] {e.Message}"));
 }
+
+#region JSON Converters
 
 /// <summary>
 /// Factory for creating JSON converters for Result types.
-/// Handles both Result and Result{T} deserialization correctly.
 /// </summary>
 public class ResultJsonConverterFactory : JsonConverterFactory
 {
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert)
-    {
-        if (typeToConvert == typeof(Result))
-        {
-            return true;
-        }
-
-        if (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(Result<>))
-        {
-            return true;
-        }
-
-        return false;
-    }
+        => typeToConvert == typeof(Result) ||
+           (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(Result<>));
 
     /// <inheritdoc />
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         if (typeToConvert == typeof(Result))
-        {
             return new ResultJsonConverter();
-        }
 
-        if (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(Result<>))
-        {
-            var dataType = typeToConvert.GetGenericArguments()[0];
-            var converterType = typeof(ResultOfTJsonConverter<>).MakeGenericType(dataType);
-            return (JsonConverter?)Activator.CreateInstance(converterType);
-        }
+        var dataType = typeToConvert.GetGenericArguments()[0];
+        var converterType = typeof(ResultOfTJsonConverter<>).MakeGenericType(dataType);
 
-        return null;
+        return (JsonConverter?)Activator.CreateInstance(converterType);
     }
+}
+
+/// <summary>
+/// Shared JSON deserialization utilities for Result converters.
+/// </summary>
+internal static class JsonConverterHelper
+{
+    public static List<Error>? DeserializeErrors(JsonElement root, JsonSerializerOptions options)
+    {
+        if (!TryGetProperty(root, "Errors", options, out var element))
+            return null;
+
+        if (element.ValueKind != JsonValueKind.Array)
+            return null;
+
+        return JsonSerializer.Deserialize<List<Error>>(element.GetRawText(), GetCaseInsensitiveOptions(options));
+    }
+
+    public static Dictionary<string, object>? DeserializeMetadata(JsonElement root, JsonSerializerOptions options)
+    {
+        if (!TryGetProperty(root, "Metadata", options, out var element))
+            return null;
+
+        if (element.ValueKind != JsonValueKind.Object)
+            return null;
+
+        return DeserializeObjectToDictionary(element);
+    }
+
+    public static bool TryGetProperty(JsonElement root, string propertyName, JsonSerializerOptions options, out JsonElement element)
+    {
+        var transformedName = options.PropertyNamingPolicy?.ConvertName(propertyName) ?? propertyName;
+
+        if (root.TryGetProperty(transformedName, out element))
+            return true;
+
+        foreach (var property in root.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                element = property.Value;
+                return true;
+            }
+        }
+
+        element = default;
+        return false;
+    }
+
+    public static string GetPropertyName(string name, JsonSerializerOptions options)
+        => options.PropertyNamingPolicy?.ConvertName(name) ?? name;
+
+    public static JsonSerializerOptions GetCaseInsensitiveOptions(JsonSerializerOptions options)
+    {
+        if (options.PropertyNameCaseInsensitive)
+            return options;
+
+        return new JsonSerializerOptions(options) { PropertyNameCaseInsensitive = true };
+    }
+
+    public static Dictionary<string, object>? DeserializeObjectToDictionary(JsonElement element)
+    {
+        var result = new Dictionary<string, object>();
+
+        foreach (var property in element.EnumerateObject())
+        {
+            result[property.Name] = DeserializeValue(property.Value);
+        }
+
+        return result.Count > 0 ? result : null;
+    }
+
+    public static object DeserializeValue(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.String => element.GetString() ?? string.Empty,
+        JsonValueKind.Number when element.TryGetInt32(out var intVal) => intVal,
+        JsonValueKind.Number when element.TryGetInt64(out var longVal) => longVal,
+        JsonValueKind.Number when element.TryGetDouble(out var doubleVal) => doubleVal,
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        JsonValueKind.Null => null!,
+        JsonValueKind.Array => element.EnumerateArray().Select(DeserializeValue).ToList(),
+        JsonValueKind.Object => DeserializeObjectToDictionary(element)!,
+        _ => element.GetRawText()
+    };
 }
 
 /// <summary>
@@ -505,17 +542,14 @@ public class ResultJsonConverter : JsonConverter<Result>
     public override Result? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Null)
-        {
             return null;
-        }
 
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
-        var errors = DeserializeErrors(root, options);
-        var metadata = DeserializeMetadata(root, options);
-
-        return Result.Create(errors, metadata);
+        return Result.Create(
+            JsonConverterHelper.DeserializeErrors(root, options),
+            JsonConverterHelper.DeserializeMetadata(root, options));
     }
 
     /// <inheritdoc />
@@ -523,114 +557,19 @@ public class ResultJsonConverter : JsonConverter<Result>
     {
         writer.WriteStartObject();
 
-        if (value.Errors is not null && value.Errors.Count > 0)
+        if (value.Errors is { Count: > 0 })
         {
-            writer.WritePropertyName(GetPropertyName("Errors", options));
+            writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Errors", options));
             JsonSerializer.Serialize(writer, value.Errors, options);
         }
 
-        if (value.Metadata is not null && value.Metadata.Count > 0)
+        if (value.Metadata is { Count: > 0 })
         {
-            writer.WritePropertyName(GetPropertyName("Metadata", options));
+            writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Metadata", options));
             JsonSerializer.Serialize(writer, value.Metadata, options);
         }
 
         writer.WriteEndObject();
-    }
-
-    /// <summary>
-    /// Deserializes the Errors property from a JSON element.
-    /// </summary>
-    protected static IReadOnlyList<Error>? DeserializeErrors(JsonElement root, JsonSerializerOptions options)
-    {
-        var errorsPropertyName = GetPropertyName("Errors", options);
-
-        if (root.TryGetProperty(errorsPropertyName, out var errorsElement) ||
-            TryGetPropertyCaseInsensitive(root, "Errors", out errorsElement))
-        {
-            if (errorsElement.ValueKind == JsonValueKind.Array)
-            {
-                return JsonSerializer.Deserialize<List<Error>>(errorsElement.GetRawText(), options);
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Deserializes the Metadata property from a JSON element.
-    /// </summary>
-    protected static Dictionary<string, object>? DeserializeMetadata(JsonElement root, JsonSerializerOptions options)
-    {
-        var metadataPropertyName = GetPropertyName("Metadata", options);
-
-        if (root.TryGetProperty(metadataPropertyName, out var metadataElement) ||
-            TryGetPropertyCaseInsensitive(root, "Metadata", out metadataElement))
-        {
-            if (metadataElement.ValueKind == JsonValueKind.Object)
-            {
-                return DeserializeMetadataObject(metadataElement);
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Deserializes a JSON object into a Dictionary.
-    /// </summary>
-    protected static Dictionary<string, object>? DeserializeMetadataObject(JsonElement element)
-    {
-        var result = new Dictionary<string, object>();
-
-        foreach (var property in element.EnumerateObject())
-        {
-            result[property.Name] = DeserializeJsonElement(property.Value);
-        }
-
-        return result.Count > 0 ? result : null;
-    }
-
-    /// <summary>
-    /// Deserializes a JSON element to its appropriate .NET type.
-    /// </summary>
-    protected static object DeserializeJsonElement(JsonElement element) => element.ValueKind switch
-    {
-        JsonValueKind.String => element.GetString() ?? string.Empty,
-        JsonValueKind.Number when element.TryGetInt32(out var intVal) => intVal,
-        JsonValueKind.Number when element.TryGetInt64(out var longVal) => longVal,
-        JsonValueKind.Number when element.TryGetDouble(out var doubleVal) => doubleVal,
-        JsonValueKind.True => true,
-        JsonValueKind.False => false,
-        JsonValueKind.Null => null!,
-        JsonValueKind.Array => element.EnumerateArray().Select(DeserializeJsonElement).ToList(),
-        JsonValueKind.Object => DeserializeMetadataObject(element)!,
-        _ => element.GetRawText()
-    };
-
-    /// <summary>
-    /// Gets the JSON property name based on the naming policy.
-    /// </summary>
-    protected static string GetPropertyName(string name, JsonSerializerOptions options) 
-        => options.PropertyNamingPolicy?.ConvertName(name) ?? name;
-
-    /// <summary>
-    /// Tries to get a property from a JSON element using case-insensitive matching.
-    /// </summary>
-    protected static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
-    {
-        foreach (var property in element.EnumerateObject())
-        {
-            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                value = property.Value;
-                return true;
-            }
-        }
-
-        value = default;
-
-        return false;
     }
 }
 
@@ -644,18 +583,15 @@ public class ResultOfTJsonConverter<TData> : JsonConverter<Result<TData>>
     public override Result<TData>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Null)
-        {
             return null;
-        }
 
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
-        var data = DeserializeData(root, options);
-        var errors = DeserializeErrors(root, options);
-        var metadata = DeserializeMetadata(root, options);
-
-        return Result<TData>.Create(data, errors, metadata);
+        return Result<TData>.Create(
+            DeserializeData(root, options),
+            JsonConverterHelper.DeserializeErrors(root, options),
+            JsonConverterHelper.DeserializeMetadata(root, options));
     }
 
     /// <inheritdoc />
@@ -663,19 +599,18 @@ public class ResultOfTJsonConverter<TData> : JsonConverter<Result<TData>>
     {
         writer.WriteStartObject();
 
-        var dataPropertyName = GetPropertyName("Data", options);
-        writer.WritePropertyName(dataPropertyName);
+        writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Data", options));
         JsonSerializer.Serialize(writer, value.Data, options);
 
-        if (value.Errors is not null && value.Errors.Count > 0)
+        if (value.Errors is { Count: > 0 })
         {
-            writer.WritePropertyName(GetPropertyName("Errors", options));
+            writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Errors", options));
             JsonSerializer.Serialize(writer, value.Errors, options);
         }
 
-        if (value.Metadata is not null && value.Metadata.Count > 0)
+        if (value.Metadata is { Count: > 0 })
         {
-            writer.WritePropertyName(GetPropertyName("Metadata", options));
+            writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Metadata", options));
             JsonSerializer.Serialize(writer, value.Metadata, options);
         }
 
@@ -684,97 +619,14 @@ public class ResultOfTJsonConverter<TData> : JsonConverter<Result<TData>>
 
     private static TData? DeserializeData(JsonElement root, JsonSerializerOptions options)
     {
-        var dataPropertyName = GetPropertyName("Data", options);
+        if (!JsonConverterHelper.TryGetProperty(root, "Data", options, out var element))
+            return default;
 
-        if (root.TryGetProperty(dataPropertyName, out var dataElement) ||
-            TryGetPropertyCaseInsensitive(root, "Data", out dataElement))
-        {
-            if (dataElement.ValueKind != JsonValueKind.Null)
-            {
-                return JsonSerializer.Deserialize<TData>(dataElement.GetRawText(), options);
-            }
-        }
+        if (element.ValueKind == JsonValueKind.Null)
+            return default;
 
-        return default;
-    }
-
-    private static IReadOnlyList<Error>? DeserializeErrors(JsonElement root, JsonSerializerOptions options)
-    {
-        var errorsPropertyName = GetPropertyName("Errors", options);
-
-        if (root.TryGetProperty(errorsPropertyName, out var errorsElement) ||
-            TryGetPropertyCaseInsensitive(root, "Errors", out errorsElement))
-        {
-            if (errorsElement.ValueKind == JsonValueKind.Array)
-            {
-                return JsonSerializer.Deserialize<List<Error>>(errorsElement.GetRawText(), options);
-            }
-        }
-
-        return null;
-    }
-
-    private static Dictionary<string, object>? DeserializeMetadata(JsonElement root, JsonSerializerOptions options)
-    {
-        var metadataPropertyName = GetPropertyName("Metadata", options);
-
-        if (root.TryGetProperty(metadataPropertyName, out var metadataElement) ||
-            TryGetPropertyCaseInsensitive(root, "Metadata", out metadataElement))
-        {
-            if (metadataElement.ValueKind == JsonValueKind.Object)
-            {
-                return DeserializeMetadataObject(metadataElement);
-            }
-        }
-
-        return null;
-    }
-
-    private static Dictionary<string, object>? DeserializeMetadataObject(JsonElement element)
-    {
-        var result = new Dictionary<string, object>();
-
-        foreach (var property in element.EnumerateObject())
-        {
-            result[property.Name] = DeserializeValue(property.Value);
-        }
-
-        return result.Count > 0 ? result : null;
-    }
-
-    private static object DeserializeValue(JsonElement element)
-    {
-        return element.ValueKind switch
-        {
-            JsonValueKind.String => element.GetString() ?? string.Empty,
-            JsonValueKind.Number when element.TryGetInt32(out var intVal) => intVal,
-            JsonValueKind.Number when element.TryGetInt64(out var longVal) => longVal,
-            JsonValueKind.Number when element.TryGetDouble(out var doubleVal) => doubleVal,
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Null => null!,
-            JsonValueKind.Array => element.EnumerateArray().Select(DeserializeValue).ToList(),
-            JsonValueKind.Object => DeserializeMetadataObject(element)!,
-            _ => element.GetRawText()
-        };
-    }
-
-    private static string GetPropertyName(string name, JsonSerializerOptions options) 
-        => options.PropertyNamingPolicy?.ConvertName(name) ?? name;
-
-    private static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
-    {
-        foreach (var property in element.EnumerateObject())
-        {
-            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                value = property.Value;
-                return true;
-            }
-        }
-
-        value = default;
-        
-        return false;
+        return JsonSerializer.Deserialize<TData>(element.GetRawText(), JsonConverterHelper.GetCaseInsensitiveOptions(options));
     }
 }
+
+#endregion
