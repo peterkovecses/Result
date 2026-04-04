@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Xunit;
 
 namespace Kovecses.Result.FluentAssertions;
@@ -101,6 +102,7 @@ public class ErrorAssertions(Error? subject)
     /// <summary>
     /// Asserts that the error contains validation messages for the specified property name.
     /// The property name must be a key in the metadata with an array of message strings as the value.
+    /// Supports both in-memory collections and JSON-deserialized elements.
     /// </summary>
     /// <param name="propertyName">The property name to check for validation messages.</param>
     /// <returns>The <see cref="ValidationPropertyAssertions"/> for further assertions on the messages.</returns>
@@ -128,6 +130,15 @@ public class ErrorAssertions(Error? subject)
             return new ValidationPropertyAssertions(messageList);
         }
 
+        // Handle List<object> (from JSON deserialization)
+        if (value is List<object> objectList)
+        {
+            var messages = objectList.OfType<string>().ToList();
+            Assert.NotEmpty(messages);
+
+            return new ValidationPropertyAssertions(messages);
+        }
+
         // Handle IEnumerable<string>
         if (value is IEnumerable<string> enumerable)
         {
@@ -137,7 +148,29 @@ public class ErrorAssertions(Error? subject)
             return new ValidationPropertyAssertions(messages);
         }
 
+        // Handle JsonElement (from JSON deserialization)
+        if (value is JsonElement jsonElement)
+        {
+            var messages = ExtractMessagesFromJsonElement(jsonElement);
+            Assert.NotEmpty(messages);
+
+            return new ValidationPropertyAssertions(messages);
+        }
+
         throw new InvalidOperationException($"Expected validation messages for property '{propertyName}' to be a string array or list, but got {value?.GetType().Name ?? "null"}");
+    }
+
+    /// <summary>
+    /// Extracts string messages from a JsonElement array or single value.
+    /// </summary>
+    protected static List<string> ExtractMessagesFromJsonElement(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            return [.. element.EnumerateArray().Select(e => e.GetString() ?? string.Empty)];
+        }
+
+        return [element.GetString() ?? string.Empty];
     }
 }
 
@@ -231,10 +264,28 @@ public class ErrorAssertions<TParent>(Error? subject, TParent parent) : ErrorAss
             return new ValidationPropertyAssertions(messageList, this);
         }
 
+        // Handle List<object> (from JSON deserialization)
+        if (value is List<object> objectList)
+        {
+            var messages = objectList.OfType<string>().ToList();
+            Assert.NotEmpty(messages);
+
+            return new ValidationPropertyAssertions(messages, this);
+        }
+
         // Handle IEnumerable<string>
         if (value is IEnumerable<string> enumerable)
         {
             var messages = enumerable.ToList();
+            Assert.NotEmpty(messages);
+
+            return new ValidationPropertyAssertions(messages, this);
+        }
+
+        // Handle JsonElement (from JSON deserialization)
+        if (value is JsonElement jsonElement)
+        {
+            var messages = ExtractMessagesFromJsonElement(jsonElement);
             Assert.NotEmpty(messages);
 
             return new ValidationPropertyAssertions(messages, this);

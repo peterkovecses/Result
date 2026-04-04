@@ -130,6 +130,31 @@ public class EmployeeHandlersTests
     }
 
     [Fact]
+    public async Task CreateEmployeeAggregatedValidator_AfterJsonRoundTrip_WithChainableAssertions()
+    {
+        // Arrange
+        var validator = new CreateEmployeeAggregatedValidator();
+        var command = new CreateEmployeeCommand("J", ""); // Too short name, empty position
+
+        // Act
+        var result = await validator.ValidateAsync(command, default);
+        
+        // Simulate JSON serialization round-trip (as would happen in HTTP response/deserialization)
+        var json = System.Text.Json.JsonSerializer.Serialize(result);
+        var deserializedResult = System.Text.Json.JsonSerializer.Deserialize<Result>(json);
+
+        // Assert - Chainable assertions AFTER JSON deserialization (metadata is JsonElement)
+        // This tests that ErrorAssertions.HaveValidationProperty correctly handles JsonElement
+        deserializedResult!.Should().BeFailure()
+            .HaveError(ErrorCodes.Validation)
+            .HaveValidationProperty("FullName")
+                .Contain("too short")
+                .And
+            .HaveValidationProperty("Position")
+                .Contain("required");
+    }
+
+    [Fact]
     public async Task HandleAsync_BulkUpdate_WhenAllSucceed_ShouldReturnSuccess()
     {
         // Arrange
