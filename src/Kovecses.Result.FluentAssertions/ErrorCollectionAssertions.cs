@@ -10,9 +10,9 @@ namespace Kovecses.Result.FluentAssertions;
 /// <param name="subject">The collection of errors.</param>
 /// <param name="parent">The parent assertions instance.</param>
 [StackTraceHidden]
-public class ErrorCollectionAssertions<TParent>(IReadOnlyList<Error> subject, TParent parent) where TParent : ResultAssertions
+public class ErrorCollectionAssertions<TParent>(Error[] subject, TParent parent) where TParent : ResultAssertions
 {
-    private readonly IReadOnlyList<Error> _subject = subject;
+    private readonly Error[] _subject = subject;
 
     /// <summary>
     /// Gets the parent assertions to allow chaining.
@@ -26,7 +26,7 @@ public class ErrorCollectionAssertions<TParent>(IReadOnlyList<Error> subject, TP
     /// <returns>The <see cref="ErrorCollectionAssertions{TParent}"/> for further assertions.</returns>
     public ErrorCollectionAssertions<TParent> HaveCount(int expectedCount)
     {
-        Assert.Equal(expectedCount, _subject.Count);
+        Assert.Equal(expectedCount, _subject.Length);
         
         return this;
     }

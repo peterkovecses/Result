@@ -31,14 +31,14 @@ internal static class ErrorResponseHelper
         _ => "Bad Request"
     };
 
-    internal static IDictionary<string, string[]> GetValidationDictionary(IReadOnlyList<Error> errors)
+    internal static IDictionary<string, string[]> GetValidationDictionary(Error[] errors)
         => errors
             .GroupBy(e => e.Code)
             .ToDictionary(g => g.Key, g => g.Select(x => x.Message).ToArray());
 
-    internal static Dictionary<string, object?>? GetExtensions(IReadOnlyList<Error> errors, Error firstError)
+    internal static Dictionary<string, object?>? GetExtensions(Error[] errors, Error firstError)
     {
-        if (errors.Count > 1)
+        if (errors.Length > 1)
         {
             return new Dictionary<string, object?> { ["errors"] = errors };
         }

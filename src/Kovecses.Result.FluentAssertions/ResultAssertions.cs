@@ -241,7 +241,7 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
     /// <typeparam name="TException">The type of the expected exception.</typeparam>
     /// <param name="exceptionFactory">An optional factory to create the exception to throw.</param>
     /// <returns>The caught exception for further assertions.</returns>
-    public TException ThrowOnValueAccess<TException>(Func<IReadOnlyList<Error>, Exception>? exceptionFactory = null) where TException : Exception
+    public TException ThrowOnValueAccess<TException>(Func<Error[], Exception>? exceptionFactory = null) where TException : Exception
     {
         BeFailure();
         

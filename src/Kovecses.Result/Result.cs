@@ -12,7 +12,7 @@ public class Result
     /// <summary>
     /// Gets the errors associated with the failure, or null if the operation was successful.
     /// </summary>
-    public IReadOnlyList<Error>? Errors { get; init; }
+    public Error[]? Errors { get; init; }
 
     /// <summary>
     /// Gets the optional metadata associated with the result.
@@ -23,7 +23,7 @@ public class Result
     /// Gets a value indicating whether the operation was successful.
     /// </summary>
     [JsonIgnore]
-    public bool IsSuccess => Errors is null || Errors.Count == 0;
+    public bool IsSuccess => Errors is null || Errors.Length == 0;
 
     /// <summary>
     /// Gets a value indicating whether the operation failed.
@@ -36,7 +36,7 @@ public class Result
     /// </summary>
     /// <param name="errors">The errors if the operation failed, otherwise null.</param>
     /// <param name="metadata">Optional metadata associated with the result.</param>
-    protected Result(IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null)
+    protected Result(Error[]? errors, Dictionary<string, object>? metadata = null)
     {
         Errors = errors;
         Metadata = metadata;
@@ -52,7 +52,7 @@ public class Result
     /// <summary>
     /// Internal factory method to create a <see cref="Result"/> instance.
     /// </summary>
-    internal static Result Create(IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata) => new()
+    internal static Result Create(Error[]? errors, Dictionary<string, object>? metadata) => new()
     {
         Errors = errors,
         Metadata = metadata
@@ -141,7 +141,7 @@ public class Result
     /// <typeparam name="TResponse">The type of the response, must be a <see cref="Result"/>.</typeparam>
     /// <param name="errors">The collection of errors.</param>
     /// <returns>A failed result of type <typeparamref name="TResponse"/>.</returns>
-    public static TResponse CreateFailure<TResponse>(IReadOnlyList<Error> errors) where TResponse : Result
+    public static TResponse CreateFailure<TResponse>(Error[] errors) where TResponse : Result
         => FailureFactory<TResponse>.Create(errors);
 
     /// <summary>
@@ -172,7 +172,7 @@ public class Result
     /// <param name="onSuccess">The function to execute on success.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>The result of the executed function.</returns>
-    public TResult Match<TResult>(Func<TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
+    public TResult Match<TResult>(Func<TResult> onSuccess, Func<Error[], TResult> onFailure)
         => IsSuccess ? onSuccess() : onFailure(Errors!);
 
     /// <summary>
@@ -182,7 +182,7 @@ public class Result
     /// <param name="onSuccess">The function to execute on success.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
+    public Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<Error[], Task<TResult>> onFailure)
         => IsSuccess ? onSuccess() : onFailure(Errors!);
 
     /// <summary>
@@ -240,9 +240,9 @@ public class Result
 
     private static class FailureFactory<TResponse> where TResponse : Result
     {
-        public static readonly Func<IReadOnlyList<Error>, TResponse> Create = BuildFactory();
+        public static readonly Func<Error[], TResponse> Create = BuildFactory();
 
-        private static Func<IReadOnlyList<Error>, TResponse> BuildFactory()
+        private static Func<Error[], TResponse> BuildFactory()
         {
             var responseType = typeof(TResponse);
 
@@ -293,7 +293,7 @@ public class Result<TData> : Result
     /// <param name="data">The data returned on success.</param>
     /// <param name="errors">The errors if the operation failed, otherwise null.</param>
     /// <param name="metadata">Optional metadata associated with the result.</param>
-    protected Result(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null)
+    protected Result(TData? data, Error[]? errors, Dictionary<string, object>? metadata = null)
         : base(errors, metadata)
     {
         Data = data;
@@ -309,7 +309,7 @@ public class Result<TData> : Result
     /// <summary>
     /// Internal factory method to create a <see cref="Result{TData}"/> instance.
     /// </summary>
-    internal static Result<TData> Create(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata) => new()
+    internal static Result<TData> Create(TData? data, Error[]? errors, Dictionary<string, object>? metadata) => new()
     {
         Data = data,
         Errors = errors,
@@ -351,7 +351,7 @@ public class Result<TData> : Result
     /// <param name="onSuccess">The function to execute on success with the data.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>The result of the executed function.</returns>
-    public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
+    public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<Error[], TResult> onFailure)
         => IsSuccess ? onSuccess(Data!) : onFailure(Errors!);
 
     /// <summary>
@@ -361,7 +361,7 @@ public class Result<TData> : Result
     /// <param name="onSuccess">The function to execute on success with the data.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public Task<TResult> MatchAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
+    public Task<TResult> MatchAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<Error[], Task<TResult>> onFailure)
         => IsSuccess ? onSuccess(Data!) : onFailure(Errors!);
 
     /// <summary>
@@ -428,7 +428,7 @@ public class Result<TData> : Result
     /// <param name="exceptionFactory">An optional factory to create the exception to throw. If null, an <see cref="InvalidOperationException"/> is thrown.</param>
     /// <returns>The data contained in the result.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the result is a failure and no exception factory is provided.</exception>
-    public TData ValueOrThrow(Func<IReadOnlyList<Error>, Exception>? exceptionFactory = null)
+    public TData ValueOrThrow(Func<Error[], Exception>? exceptionFactory = null)
     {
         if (IsSuccess) return Data!;
 
@@ -445,8 +445,8 @@ public class Result<TData> : Result
     public TData? ValueOrDefault(TData? defaultValue = default)
         => IsSuccess ? Data : defaultValue;
 
-    private static string FormatErrors(IReadOnlyList<Error> errors)
-        => errors.Count == 0
+    private static string FormatErrors(Error[] errors)
+        => errors.Length == 0
             ? "No errors provided"
             : string.Join("; ", errors.Select(e => $"[{e.Code}] {e.Message}"));
 }
@@ -576,7 +576,7 @@ public class ResultJsonConverter : JsonConverter<Result>
         var root = doc.RootElement;
 
         return Result.Create(
-            JsonConverterHelper.DeserializeErrors(root, options),
+            JsonConverterHelper.DeserializeErrors(root, options)?.ToArray(),
             JsonConverterHelper.DeserializeMetadata(root, options));
     }
 
@@ -585,7 +585,7 @@ public class ResultJsonConverter : JsonConverter<Result>
     {
         writer.WriteStartObject();
 
-        if (value.Errors is { Count: > 0 })
+        if (value.Errors is { Length: > 0 })
         {
             writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Errors", options));
             JsonSerializer.Serialize(writer, value.Errors, options);
@@ -618,7 +618,7 @@ public class ResultOfTJsonConverter<TData> : JsonConverter<Result<TData>>
 
         return Result<TData>.Create(
             DeserializeData(root, options),
-            JsonConverterHelper.DeserializeErrors(root, options),
+            JsonConverterHelper.DeserializeErrors(root, options)?.ToArray(),
             JsonConverterHelper.DeserializeMetadata(root, options));
     }
 
@@ -630,7 +630,7 @@ public class ResultOfTJsonConverter<TData> : JsonConverter<Result<TData>>
         writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Data", options));
         JsonSerializer.Serialize(writer, value.Data, options);
 
-        if (value.Errors is { Count: > 0 })
+        if (value.Errors is { Length: > 0 })
         {
             writer.WritePropertyName(JsonConverterHelper.GetPropertyName("Errors", options));
             JsonSerializer.Serialize(writer, value.Errors, options);

@@ -235,7 +235,7 @@ static void PrintResultBase(Result? result)
     
     Console.WriteLine($"  IsSuccess: {result.IsSuccess}");
     Console.WriteLine($"  IsFailure: {result.IsFailure}");
-    Console.WriteLine($"  Errors: {(result.Errors is null ? "null" : $"Count={result.Errors.Count}")}");
+    Console.WriteLine($"  Errors: {(result.Errors is null ? "null" : $"Count={result.Errors.Length}")}");
     
     if (result.Errors is not null)
     {

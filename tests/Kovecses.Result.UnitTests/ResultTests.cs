@@ -116,7 +116,7 @@ public class ResultTests
         // Assert
         result.Should().BeFailure();
         Assert.NotNull(result.Errors);
-        Assert.Equal(2, result.Errors.Count);
+        Assert.Equal(2, result.Errors.Length);
         Assert.Equal("Code1", result.Errors[0].Code);
         Assert.Equal("Code2", result.Errors[1].Code);
     }
@@ -133,7 +133,7 @@ public class ResultTests
         // Assert
         result.Should().BeFailure();
         Assert.NotNull(result.Errors);
-        Assert.Equal(2, result.Errors.Count);
+        Assert.Equal(2, result.Errors.Length);
     }
 
     [Fact]

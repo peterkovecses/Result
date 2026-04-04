@@ -155,7 +155,7 @@ public static class ResultExtensions
     /// <param name="onSuccess">The function to execute on success with the data.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
+    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, TResult> onSuccess, Func<Error[], TResult> onFailure)
     {
         var result = await task;
 
@@ -173,7 +173,7 @@ public static class ResultExtensions
     /// <param name="onSuccess">The asynchronous function to execute on success with the data.</param>
     /// <param name="onFailure">The asynchronous function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
+    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, Task<TResult>> onSuccess, Func<Error[], Task<TResult>> onFailure)
     {
         var result = await task;
 
@@ -190,7 +190,7 @@ public static class ResultExtensions
     /// <param name="onSuccess">The function to execute on success.</param>
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public static async Task<TResult> MatchAsync<TResult>(this Task<Result> task, Func<TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
+    public static async Task<TResult> MatchAsync<TResult>(this Task<Result> task, Func<TResult> onSuccess, Func<Error[], TResult> onFailure)
     {
         var result = await task;
 
@@ -207,7 +207,7 @@ public static class ResultExtensions
     /// <param name="onSuccess">The asynchronous function to execute on success.</param>
     /// <param name="onFailure">The asynchronous function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public static async Task<TResult> MatchAsync<TResult>(this Task<Result> task, Func<Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
+    public static async Task<TResult> MatchAsync<TResult>(this Task<Result> task, Func<Task<TResult>> onSuccess, Func<Error[], Task<TResult>> onFailure)
     {
         var result = await task;
 
