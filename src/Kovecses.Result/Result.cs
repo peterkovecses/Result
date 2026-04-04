@@ -34,17 +34,26 @@ public class Result
     /// </summary>
     /// <param name="errors">The errors if the operation failed, otherwise null.</param>
     /// <param name="metadata">Optional metadata associated with the result.</param>
-    [JsonConstructor]
-    public Result(IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null)
+    protected Result(IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null)
     {
         Errors = errors;
         Metadata = metadata;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result"/> class for success.
+    /// Initializes a new instance of the <see cref="Result"/> class for serialization.
     /// </summary>
+    [JsonConstructor]
     protected Result() { }
+
+    /// <summary>
+    /// Internal factory method to create a <see cref="Result"/> instance.
+    /// </summary>
+    internal static Result Create(IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata) => new()
+    {
+        Errors = errors,
+        Metadata = metadata
+    };
 
     /// <summary>
     /// Creates a successful result.
@@ -52,7 +61,7 @@ public class Result
     /// <param name="metadata">Optional metadata.</param>
     /// <returns>A successful <see cref="Result"/>.</returns>
     public static Result Success(Dictionary<string, object>? metadata = null) 
-        => new(null, metadata);
+        => Create(null, metadata);
 
     /// <summary>
     /// Creates a successful result with data.
@@ -62,7 +71,7 @@ public class Result
     /// <param name="metadata">Optional metadata.</param>
     /// <returns>A successful <see cref="Result{TData}"/>.</returns>
     public static Result<TData> Success<TData>(TData data, Dictionary<string, object>? metadata = null) 
-        => new(data, null, metadata);
+        => Result<TData>.Create(data, null, metadata);
 
     /// <summary>
     /// Creates a failed result from a single error.
@@ -71,7 +80,7 @@ public class Result
     /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result"/>.</returns>
     public static Result Failure(Error error, Dictionary<string, object>? metadata = null) 
-        => new([error], metadata);
+        => Create([error], metadata);
 
     /// <summary>
     /// Creates a failed result from a code and message.
@@ -90,7 +99,7 @@ public class Result
     /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result"/>.</returns>
     public static Result Failure(IEnumerable<Error> errors, Dictionary<string, object>? metadata = null) 
-        => new(errors.ToList(), metadata);
+        => Create([.. errors], metadata);
 
     /// <summary>
     /// Creates a failed result with data from a single error.
@@ -100,7 +109,7 @@ public class Result
     /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result{TData}"/>.</returns>
     public static Result<TData> Failure<TData>(Error error, Dictionary<string, object>? metadata = null) 
-        => new(default, [error], metadata);
+        => Result<TData>.Create(default, [error], metadata);
 
     /// <summary>
     /// Creates a failed result with data from a code and message.
@@ -121,7 +130,7 @@ public class Result
     /// <param name="metadata">Optional metadata.</param>
     /// <returns>A failed <see cref="Result{TData}"/>.</returns>
     public static Result<TData> Failure<TData>(IEnumerable<Error> errors, Dictionary<string, object>? metadata = null) 
-        => new(default, errors.ToList(), metadata);
+        => Result<TData>.Create(default, [.. errors], metadata);
 
     /// <summary>
     /// Creates a failure response of the specified type using an optimized factory.
@@ -283,17 +292,30 @@ public class Result<TData> : Result
     /// <param name="data">The data returned on success.</param>
     /// <param name="errors">The errors if the operation failed, otherwise null.</param>
     /// <param name="metadata">Optional metadata associated with the result.</param>
-    [JsonConstructor]
-    public Result(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null) 
+    protected Result(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata = null) 
         : base(errors, metadata)
     {
         Data = data;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result{TData}"/> class for success.
+    /// Initializes a new instance of the <see cref="Result{TData}"/> class for serialization.
     /// </summary>
-    protected Result() { }
+    [JsonConstructor]
+    private Result() { }
+
+    /// <summary>
+    /// Internal factory method to create a <see cref="Result{TData}"/> instance.
+    /// </summary>
+    internal static Result<TData> Create(TData? data, IReadOnlyList<Error>? errors, Dictionary<string, object>? metadata)
+    {
+        return new Result<TData>
+        {
+            Data = data,
+            Errors = errors,
+            Metadata = metadata
+        };
+    }
 
     /// <summary>
     /// Implicitly converts data to a successful <see cref="Result{TData}"/>.

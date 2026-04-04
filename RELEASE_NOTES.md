@@ -1,10 +1,9 @@
-# Release v2.1.0
+# Release v2.2.0
 
-This release restores the POCO-friendly architecture from v1.x while maintaining the intentional multi-error collection support introduced in v2.0.0.
+This release introduces a "Pure POCO" architecture to ensure seamless JSON serialization and deserialization across all .NET environments, while maintaining the collection-based error handling.
 
 ## Improvements & Fixes
-- **POCO Compatibility:** Restored traditional class structure and protected parameterless constructors for `Result` and `Result<T>`.
-- **Serialization Neutrality:** Removed forced `JsonStringEnumConverter` from `ErrorType` to follow framework-level JSON defaults.
-- **Improved Deserialization:** Fixed an issue where `Result<T>` could not be deserialized correctly using `System.Text.Json` due to primary constructor usage.
-- **Documentation:** Updated README with accurate JSON examples reflecting serialized output.
-- **Sample Projects:** Removed manual JSON configurations from Sample and Test projects to remain neutral.
+- **Pure POCO Architecture:** Transitioned `Result` and `Result<T>` to use parameterless constructors with `[JsonConstructor]` and `init` properties.
+- **Factory Method Refinement:** Centralized instantiation through `internal static Create` methods, shielding the object initialization logic from public API while remaining fully compatible with serializable property patterns.
+- **Enhanced Compatibility:** Guaranteed out-of-the-box support for `System.Text.Json` and `Newtonsoft.Json` without requiring custom configuration or converters.
+- **Stability:** Maintained the multi-error `Errors` collection and immutability as core pillars.
