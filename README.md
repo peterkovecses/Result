@@ -24,6 +24,7 @@ If you find this library useful, please give it a **star** on GitHub! It helps m
     - [Error Aggregation (Combine)](#error-aggregation-combine)
     - [Custom Errors & Metadata](#custom-errors--metadata)
     - [Safety Helpers](#safety-helpers)
+    - [JSON Serialization](#json-serialization-support)
     - [Advanced Usage (Performance)](#advanced-usage-performance)
 4. [ASP.NET Core Integration](#3-aspnet-core-integration-kovecsesresultaspnetcore)
 5. [Testing Support (Fluent Assertions)](#4-testing-support-kovecsesresultfluentassertions)
@@ -147,6 +148,23 @@ var data = result.ValueOrThrow(errors => new MyException(errors[0].Message));
 var data = result.ValueOrDefault("Fallback"); 
 ```
 
+### JSON Serialization Support
+
+The library includes built-in JSON converters for `System.Text.Json` that handle both serialization and deserialization correctly.
+
+```csharp
+// Serialization
+var result = Result.Success(new UserDto(1, "John"));
+var json = JsonSerializer.Serialize(result);
+
+// Deserialization (works with direct API responses)
+var deserialized = JsonSerializer.Deserialize<Result<UserDto>>(json);
+
+// Works with naming policies
+var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+var restored = JsonSerializer.Deserialize<Result<UserDto>>(json, options);
+```
+
 ### Advanced Usage (Performance)
 The library is optimized for high-performance scenarios like MediatR Pipelines. The `CreateFailure<TResponse>` method uses cached delegates to instantiate generic result types nearly as fast as direct constructor calls.
 
@@ -199,8 +217,13 @@ public IActionResult Create(User cmd) => _service.Create(cmd).ToActionResult();
 #### Wrapped Results (Internal/Typed Clients)
 Returns the full `Result` object in the body (e.g., for Blazor or Typed Clients).
 ```csharp
-// Returns: { "errors": null, "metadata": { ... } }
+// Server-side
 return result.ToMinimalApiResult(includeResultInResponse: true);
+
+// Client-side deserialization
+var result = await response.Content.ReadFromJsonAsync<Result<UserDto>>();
+if (result.IsSuccess)
+    Console.WriteLine(result.Data.Name);
 ```
 
 #### Direct Error Mapping
