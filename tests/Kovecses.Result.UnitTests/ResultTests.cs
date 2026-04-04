@@ -35,7 +35,7 @@ public class ResultTests
         var result = Result.Failure(error);
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(error.Code);
+        result.Should().BeFailure().HaveError(error.Code);
     }
 
     [Fact]
@@ -49,8 +49,7 @@ public class ResultTests
         var result = Result.Failure(code, message);
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(code);
-        result.Should().HaveError().HaveMessage(message);
+        result.Should().BeFailure().HaveError(code).HaveMessage(message);
     }
 
     [Theory]
@@ -89,20 +88,20 @@ public class ResultTests
         Result result = error;
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(error.Code);
+        result.Should().BeFailure().HaveError(error.Code);
     }
 
     [Fact]
     public void ImplicitOperator_WhenAssigningErrorToGenericResult_ShouldReturnFailure()
     {
         // Arrange
-        var error = Error.Validation([]);
+        var error = Error.Validation("Validation.Error", "One or more validation errors occurred.");
 
         // Act
         Result<int> result = error;
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(error.Code);
+        result.Should().BeFailure().HaveError(error.Code);
     }
 
     [Fact]
@@ -125,7 +124,7 @@ public class ResultTests
     public void Serialization_WhenFailure_ShouldSerializeAndDeserializeCorrectly()
     {
         // Arrange
-        var error = Error.Validation(new Dictionary<string, object> { { "Email", "Invalid" } });
+        var error = Error.Validation("V.1", "Message") with { Metadata = new Dictionary<string, object> { { "Email", "Invalid" } } };
         var result = Result.Failure<string>(error);
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -135,8 +134,7 @@ public class ResultTests
 
         // Assert
         Assert.NotNull(deserialized);
-        deserialized.Should().BeFailure().HaveErrorCode(error.Code);
-        deserialized.Should().HaveError().HaveMetadata("Email", "Invalid");
+        deserialized.Should().BeFailure().HaveError(error.Code).HaveMetadata("Email", "Invalid");
     }
 
     [Fact]
@@ -146,7 +144,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Act
-        var output = result.Match(() => "Success", error => "Failure");
+        var output = result.Match(() => "Success", errors => "Failure");
 
         // Assert
         Assert.Equal("Success", output);
@@ -159,7 +157,7 @@ public class ResultTests
         var result = Result.Failure(Error.NotFound());
 
         // Act
-        var output = result.Match(() => "Success", error => "Failure");
+        var output = result.Match(() => "Success", errors => "Failure");
 
         // Assert
         Assert.Equal("Failure", output);
@@ -172,7 +170,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Act
-        var output = await result.MatchAsync(() => Task.FromResult("Success"), error => Task.FromResult("Failure"));
+        var output = await result.MatchAsync(() => Task.FromResult("Success"), errors => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Success", output);
@@ -185,7 +183,7 @@ public class ResultTests
         var result = Result.Success("Data");
 
         // Act
-        var output = result.Match(data => data, error => "Failure");
+        var output = result.Match(data => data, errors => "Failure");
 
         // Assert
         Assert.Equal("Data", output);
@@ -198,7 +196,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Act
-        var output = await result.MatchAsync(() => Task.FromResult("Success"), error => Task.FromResult("Failure"));
+        var output = await result.MatchAsync(() => Task.FromResult("Success"), errors => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Success", output);
@@ -213,7 +211,7 @@ public class ResultTests
         // Act
         var output = await result.MatchAsync(
             data => Task.FromResult(data.ToString()), 
-            error => Task.FromResult("Failure"));
+            errors => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("10", output);
@@ -335,7 +333,7 @@ public class ResultTests
     public void Map_WhenFailure_ShouldReturnFailure()
     {
         // Arrange
-        var result = Result.Failure<int>(Error.Validation([]));
+        var result = Result.Failure<int>(Error.Validation("Validation.Error", "Message"));
 
         // Act
         var mapped = result.Map(x => x * 2);
@@ -416,23 +414,22 @@ public class ResultTests
         var result = Result.Combine(Result.Success(), Result.Failure(error));
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(error.Code);
+        result.Should().BeFailure().HaveError(error.Code);
     }
 
     [Fact]
     public void Combine_WhenMultipleFailures_ShouldAggregateErrorsAndMergeMetadata()
     {
         // Arrange
-        var error1 = Error.Validation(new Dictionary<string, object> { { "F1", "E1" } }, code: "V.1");
-        var error2 = Error.Failure("F2", "C.2");
+        var error1 = Error.Validation(ErrorCodes.Validation, "Message") with { Metadata = new Dictionary<string, object> { { "F1", "E1" } } };
+        var error2 = Error.Failure("F2", "C.2") with { Metadata = new Dictionary<string, object> { { "C.2", "F2" } } };
 
         // Act
         var result = Result.Combine(Result.Failure(error1), Result.Failure(error2));
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(ErrorCodes.Validation);
-        result.Should().HaveError().HaveMetadata("F1", "E1"); // From validation error's metadata
-        result.Should().HaveError().HaveMetadata("C.2", "F2"); // From failure error's code/message
+        result.Should().BeFailure().HaveError(ErrorCodes.Validation).HaveMetadata("F1", "E1"); // From validation error's metadata
+        result.Should().HaveError("C.2").HaveMetadata("C.2", "F2"); // From failure error's code/message
     }
 
     [Fact]
@@ -465,7 +462,7 @@ public class ResultTests
         var result = Result.Failure<string>(Error.NotFound());
 
         // Act & Assert
-        result.Should().ThrowOnValueAccess<ArgumentException>(e => new ArgumentException(e.Code));
+        result.Should().ThrowOnValueAccess<ArgumentException>(errors => new ArgumentException(errors[0].Code));
     }
 
     [Fact]
@@ -522,7 +519,7 @@ public class ResultTests
     public void HaveMetadata_WithValue_WhenKeyAndValueMatch_ShouldSucceed()
     {
         // Arrange
-        var error = Error.Validation(new Dictionary<string, object> { { "Key", "Value" } });
+        var error = Error.Validation("V.1", "Message") with { Metadata = new Dictionary<string, object> { { "Key", "Value" } } };
 
         // Act & Assert
         error.Should().HaveMetadata("Key", "Value");
@@ -576,7 +573,7 @@ public class ResultTests
         var result = Result.Failure(code, message, metadata);
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(code).HaveMetadata("Key", "Value");
+        result.Should().BeFailure().HaveError(code).And.HaveMetadata("Key", "Value");
     }
 
     [Fact]
@@ -591,7 +588,7 @@ public class ResultTests
         var result = Result.Failure<int>(code, message, metadata);
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(code).HaveMetadata("Key", "Value");
+        result.Should().BeFailure().HaveError(code).And.HaveMetadata("Key", "Value");
     }
 
     [Fact]
@@ -605,7 +602,7 @@ public class ResultTests
         var result = Result.Failure<int>(error, metadata);
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(error.Code).HaveMetadata("Key", "Value");
+        result.Should().BeFailure().HaveError(error.Code).And.HaveMetadata("Key", "Value");
     }
 
     [Fact]
@@ -712,5 +709,54 @@ public class ResultTests
         // Act & Assert
         var exception = result.Should().ThrowOnValueAccess<InvalidOperationException>(null);
         Assert.Contains(ErrorCodes.NotFound, exception.Message);
+    }
+
+    [Fact]
+    public void Result_ProtectedConstructor_ShouldBeAccessibleByInheritance()
+    {
+        // Act
+        var result = new DerivedResult();
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    private class DerivedResult : Result { }
+
+    [Fact]
+    public void CreateFailure_WhenInvalidType_ShouldThrowTypeInitializationException()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound() };
+
+        // Act & Assert
+        var exception = Assert.Throws<TypeInitializationException>(() => Result.CreateFailure<DerivedResult>(errors));
+        Assert.IsType<InvalidOperationException>(exception.InnerException);
+    }
+
+    [Fact]
+    public void CreateFailure_ShouldUseOptimizedFactoryForResult()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound() };
+
+        // Act
+        var result = Result.CreateFailure<Result>(errors);
+
+        // Assert
+        result.Should().BeFailure().HaveError(ErrorCodes.NotFound);
+    }
+
+    [Fact]
+    public void CreateFailure_ShouldUseOptimizedFactoryForResultGeneric()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound() };
+
+        // Act
+        var result = Result.CreateFailure<Result<string>>(errors);
+
+        // Assert
+        result.Should().BeFailure().HaveError(ErrorCodes.NotFound);
     }
 }

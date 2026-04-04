@@ -1,3 +1,6 @@
+using Kovecses.Result.FluentAssertions;
+using Xunit;
+
 namespace Kovecses.Result.UnitTests;
 
 public class ResultExtensionsTests
@@ -25,7 +28,7 @@ public class ResultExtensionsTests
         var result = await task.BindAsync(() => Task.FromResult(Result.Success()));
 
         // Assert
-        result.Should().BeFailure().HaveErrorCode(ErrorCodes.NotFound);
+        result.Should().BeFailure().HaveError(ErrorCodes.NotFound);
     }
 
     [Fact]
@@ -74,7 +77,7 @@ public class ResultExtensionsTests
         var task = Task.FromResult(Result.Success("Data"));
 
         // Act
-        var output = await task.MatchAsync(data => data, error => "Failure");
+        var output = await task.MatchAsync(data => data, errors => "Failure");
 
         // Assert
         Assert.Equal("Data", output);
@@ -89,7 +92,7 @@ public class ResultExtensionsTests
         // Act
         var output = await task.MatchAsync(
             data => Task.FromResult(data), 
-            error => Task.FromResult("Failure"));
+            errors => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Data", output);
@@ -102,7 +105,22 @@ public class ResultExtensionsTests
         var task = Task.FromResult(Result.Failure<string>(Error.NotFound()));
 
         // Act
-        var output = await task.MatchAsync(data => data, error => "Failure");
+        var output = await task.MatchAsync(data => data, errors => "Failure");
+
+        // Assert
+        Assert.Equal("Failure", output);
+    }
+
+    [Fact]
+    public async Task MatchAsync_WithTaskResultGeneric_AsyncFunctions_WhenFailure_ShouldExecuteOnFailure()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Failure<string>(Error.NotFound()));
+
+        // Act
+        var output = await task.MatchAsync(
+            data => Task.FromResult(data), 
+            errors => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Failure", output);
@@ -132,6 +150,21 @@ public class ResultExtensionsTests
 
         // Act
         var result = await task.TapAsync(data => value = data);
+
+        // Assert
+        Assert.Equal(10, value);
+        result.Should().BeSuccess().HaveData(10);
+    }
+
+    [Fact]
+    public async Task TapAsync_WithTaskResultGeneric_TaskFunc_WhenSuccess_ShouldExecuteFuncWithData()
+    {
+        // Arrange
+        var task = Task.FromResult(Result.Success(10));
+        var value = 0;
+
+        // Act
+        var result = await task.TapAsync(data => { value = data; return Task.CompletedTask; });
 
         // Assert
         Assert.Equal(10, value);

@@ -5,6 +5,7 @@ namespace Kovecses.Result;
 /// <summary>
 /// Defines the technical categories of errors to facilitate consistent handling (e.g., HTTP mapping).
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ErrorType
 {
     /// <summary>
@@ -103,8 +104,8 @@ public record Error
     /// <summary>
     /// Creates a "Validation" error.
     /// </summary>
-    public static Error Validation(Dictionary<string, object> errors, string message = "One or more validation errors occurred.", string code = ErrorCodes.Validation)
-        => new(code, message, ErrorType.Validation, errors);
+    public static Error Validation(string code, string message)
+        => new(code, message, ErrorType.Validation);
 
     /// <summary>
     /// Creates a "NotFound" error.

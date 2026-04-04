@@ -22,16 +22,35 @@ public class ErrorTests
     }
 
     [Fact]
-    public void Validation_WhenCalled_ShouldUseCorrectDefaults()
+    public void Validation_WhenCalled_ShouldInitializeCorrectly()
     {
         // Arrange
+        const string code = "Validation.Error";
+        const string message = "One or more validation errors occurred.";
+
+        // Act
+        var error = Error.Validation(code, message);
+
+        // Assert
+        error.Should().HaveCode(code)
+            .HaveMessage(message)
+            .HaveType(ErrorType.Validation);
+    }
+
+    [Fact]
+    public void Validation_WithMetadata_ShouldInitializeCorrectly()
+    {
+        // Arrange
+        const string code = "Validation.Error";
+        const string message = "One or more validation errors occurred.";
         var metadata = new Dictionary<string, object> { { "Field", "Required" } };
 
         // Act
-        var error = Error.Validation(metadata);
+        var error = Error.Validation(code, message) with { Metadata = metadata };
 
         // Assert
-        error.Should().HaveCode(ErrorCodes.Validation)
+        error.Should().HaveCode(code)
+            .HaveMessage(message)
             .HaveType(ErrorType.Validation)
             .HaveMetadata("Field", "Required");
     }
@@ -94,12 +113,16 @@ public class ErrorTests
     [Fact]
     public void Failure_WhenCalledWithParams_ShouldUseCorrectValues()
     {
+        // Arrange
+        const string code = "Custom.Code";
+        const string message = "Custom Message";
+
         // Act
-        var error = Error.Failure("Custom Message", "Custom.Code");
+        var error = Error.Failure(message, code);
 
         // Assert
-        error.Should().HaveCode("Custom.Code")
-            .HaveMessage("Custom Message")
+        error.Should().HaveCode(code)
+            .HaveMessage(message)
             .HaveType(ErrorType.Failure);
     }
 

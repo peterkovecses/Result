@@ -48,9 +48,7 @@ public class MinimalApiIntegrationTests(WebApplicationFactory<Program> factory) 
         
         Assert.NotNull(result);
         result.Should().BeFailure()
-            .HaveErrorCode(ErrorCodes.NotFound);
-            
-        result.Should().HaveError()
-            .HaveMessage("Employee 999 not found.");
+            .HaveError(ErrorCodes.NotFound)
+                .HaveMessage("Employee 999 not found.");
     }
 }

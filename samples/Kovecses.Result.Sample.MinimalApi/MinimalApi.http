@@ -68,3 +68,32 @@ DELETE {{Host}}/employees/1
 ### 11. Delete Employee - Success
 # Returns 204 No Content on success
 DELETE {{Host}}/employees/2
+
+### 12. Bulk Update Positions - Success (Result.Combine Demo)
+# Returns 204 No Content if all updates succeed
+POST {{Host}}/employees/bulk-update
+Content-Type: application/json
+
+{
+  "ids": [1, 2],
+  "newPosition": "Executive Manager"
+}
+
+### 13. Bulk Update Positions - Mixed Failures (Collection Demo)
+# Returns 400 Bad Request (Conflict) with all errors in the extensions["errors"] collection
+POST {{Host}}/employees/bulk-update
+Content-Type: application/json
+
+{
+  "ids": [1, 999],
+  "newPosition": "Product Manager"
+}
+
+### 14. Get Employee Summary (MatchAsync Demo)
+# Returns 200 OK with formatted string result
+GET {{Host}}/employees/1/summary
+
+### 15. System Health Check (Direct Error Mapping Demo)
+# Returns 500 Internal Server Error (Unexpected) directly from an Error object
+GET {{Host}}/health
+

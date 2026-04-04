@@ -92,6 +92,22 @@ public class ResultExtensionsTests
     }
 
     [Fact]
+    public void ToMinimalApiResult_WhenValidationFailureAndIncludeResult_ShouldReturnJsonWithResult()
+    {
+        // Arrange
+        var error = Error.Validation("Email", "Required");
+        var result = Result.Failure(error);
+
+        // Act
+        var apiResult = result.ToMinimalApiResult(includeResultInResponse: true);
+
+        // Assert
+        var jsonResult = apiResult.ShouldBeOfType<JsonHttpResult<Result>>();
+        jsonResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        jsonResult.Value.ShouldBe(result);
+    }
+
+    [Fact]
     public void ToMinimalApiResult_WhenFailureAndIncludeResult_ShouldReturnJsonWithResult()
     {
         // Arrange
@@ -211,7 +227,7 @@ public class ResultExtensionsTests
     public void ToActionResult_WhenFailure_ShouldReturnProblemDetails()
     {
         // Arrange
-        var error = Error.Validation(new Dictionary<string, object> { { "Key", "Error" } });
+        var error = Error.Validation("Key", "Error");
         var result = Result.Failure(error);
 
         // Act
@@ -221,9 +237,26 @@ public class ResultExtensionsTests
         var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
         objectResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
         
-        var problemDetails = objectResult.Value.ShouldBeOfType<ProblemDetails>();
+        var problemDetails = objectResult.Value.ShouldBeOfType<ValidationProblemDetails>();
         problemDetails.Title.ShouldBe("Validation Error");
-        problemDetails.Extensions.ContainsKey("Key").ShouldBeTrue();
+        problemDetails.Errors.ContainsKey("Key").ShouldBeTrue();
+        problemDetails.Errors["Key"].ShouldContain("Error");
+    }
+
+    [Fact]
+    public void ToActionResult_WhenValidationFailureAndIncludeResult_ShouldReturnResultWithCorrectStatusCode()
+    {
+        // Arrange
+        var error = Error.Validation("Email", "Required");
+        var result = Result.Failure<string>(error);
+
+        // Act
+        var actionResult = result.ToActionResult(includeResultInResponse: true);
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        objectResult.Value.ShouldBe(result);
     }
 
     [Fact]
@@ -287,7 +320,7 @@ public class ResultExtensionsTests
     public void ToMinimalApiResultGeneric_WhenFailure_ShouldReturnProblem()
     {
         // Arrange
-        var error = Error.Validation([]);
+        var error = Error.Validation("Key", "Error");
         var result = Result.Failure<int>(error);
 
         // Act
@@ -296,6 +329,8 @@ public class ResultExtensionsTests
         // Assert
         var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
         problemResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        var validationProblemDetails = problemResult.ProblemDetails.ShouldBeOfType<HttpValidationProblemDetails>();
+        validationProblemDetails.Errors.ContainsKey("Key").ShouldBeTrue();
     }
 
     [Fact]
@@ -312,6 +347,91 @@ public class ResultExtensionsTests
         var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
         objectResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
         objectResult.Value.ShouldBe(result);
+    }
+
+    [Fact]
+    public void ToMinimalApiResult_WhenMultipleErrors_ShouldReturnFirstErrorStatusCode()
+    {
+        // Arrange
+        var errors = new[]
+        {
+            Error.NotFound("Not found"),
+            Error.Validation("Key", "Error")
+        };
+        var result = Result.Failure(errors);
+
+        // Act
+        var apiResult = result.ToMinimalApiResult();
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        problemResult.ProblemDetails.Extensions.ContainsKey("errors").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ToActionResult_WhenMultipleErrors_ShouldReturnFirstErrorStatusCode()
+    {
+        // Arrange
+        var errors = new[]
+        {
+            Error.Conflict("Conflict"),
+            Error.Validation("Key", "Error")
+        };
+        var result = Result.Failure(errors);
+
+        // Act
+        var actionResult = result.ToActionResult();
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status409Conflict);
+
+        var problemDetails = objectResult.Value.ShouldBeOfType<ProblemDetails>();
+        problemDetails.Extensions.ContainsKey("errors").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ToMinimalApiResult_WhenAllValidationErrors_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        var errors = new[]
+        {
+            Error.Validation("Key1", "Error1"),
+            Error.Validation("Key2", "Error2")
+        };
+        var result = Result.Failure(errors);
+
+        // Act
+        var apiResult = result.ToMinimalApiResult();
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        var validationProblemDetails = problemResult.ProblemDetails.ShouldBeOfType<HttpValidationProblemDetails>();
+        validationProblemDetails.Errors.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void ToActionResult_WhenAllValidationErrors_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        var errors = new[]
+        {
+            Error.Validation("Key1", "Error1"),
+            Error.Validation("Key2", "Error2")
+        };
+        var result = Result.Failure(errors);
+
+        // Act
+        var actionResult = result.ToActionResult();
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+
+        var validationProblemDetails = objectResult.Value.ShouldBeOfType<ValidationProblemDetails>();
+        validationProblemDetails.Errors.Count.ShouldBe(2);
     }
 
     #endregion

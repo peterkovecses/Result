@@ -6,13 +6,19 @@ public sealed record CreateEmployeeCommand(string FullName, string Position) : I
 
 public sealed record UpdateEmployeeCommand(int Id, string FullName, string Position) : IRequest<Result<EmployeeDto>>;
 
+public sealed record BulkUpdatePositionCommand(List<int> Ids, string NewPosition) : IRequest<Result>;
+
 public sealed record DeleteEmployeeCommand(int Id) : IRequest<Result>;
+
+public sealed record GetEmployeeSummaryQuery(int Id) : IRequest<Result<string>>;
 
 public sealed class EmployeeHandlers : 
     IRequestHandler<GetEmployeeQuery, Result<Employee>>,
     IRequestHandler<CreateEmployeeCommand, Result<Employee>>,
     IRequestHandler<UpdateEmployeeCommand, Result<EmployeeDto>>,
-    IRequestHandler<DeleteEmployeeCommand, Result>
+    IRequestHandler<DeleteEmployeeCommand, Result>,
+    IRequestHandler<BulkUpdatePositionCommand, Result>,
+    IRequestHandler<GetEmployeeSummaryQuery, Result<string>>
 {
     private static readonly List<Employee> Employees =
     [
@@ -58,24 +64,65 @@ public sealed class EmployeeHandlers :
                 var index = Employees.IndexOf(employee);
                 var updated = employee with { FullName = request.FullName, Position = request.Position };
                 Employees[index] = updated;
+                
                 return await Task.FromResult(updated);
             })
             .MapAsync(employee => new EmployeeDto(employee.Id, employee.FullName, employee.Position))
             .TapAsync(dto => {
                 // Simulating a side effect like logging or notifying other systems
                 Console.WriteLine($"[LOG] Employee updated: {dto.DisplayName} ({dto.JobTitle})");
+                
                 return Task.CompletedTask;
             });
 
         // Adding audit metadata if successful
         return result.IsSuccess 
             ? Result.Success(result.Data!, new Dictionary<string, object> { { "Audit.Timestamp", DateTime.UtcNow } })
-            : result.Error!;
+            : Result.Failure<EmployeeDto>(result.Errors!);
+    }
+
+    public async Task<Result> HandleAsync(BulkUpdatePositionCommand request, CancellationToken cancellationToken)
+    {
+        // Demonstration of Result.Combine:
+        // Validate each employee update separately and then combine results.
+        var tasks = request.Ids.Select(id => UpdateSinglePositionAsync(id, request.NewPosition));
+        var results = await Task.WhenAll(tasks);
+
+        return Result.Combine(results);
+    }
+
+    public async Task<Result<string>> HandleAsync(GetEmployeeSummaryQuery request, CancellationToken cancellationToken)
+    {
+        // Demonstration of MatchAsync:
+        // Transforming a Result<Employee> into a Result<string> with a custom format.
+        var result = await GetByIdAsync(request.Id);
+
+        return await result.MatchAsync<Result<string>>(
+            onSuccess: employee => Task.FromResult<Result<string>>($"{employee.FullName} works as {employee.Position}."),
+            onFailure: errors => Task.FromResult<Result<string>>(Result.Failure<string>(errors))
+        );
+    }
+
+    private async Task<Result> UpdateSinglePositionAsync(int id, string newPosition)
+    {
+        var result = await GetByIdAsync(id);
+        
+        if (result.IsFailure)
+        {
+            return Result.Failure(result.Errors!);
+        }
+
+        var employee = result.Data!;
+        var index = Employees.IndexOf(employee);
+        Employees[index] = employee with { Position = newPosition };
+
+        return Result.Success();
     }
 
     private Task<Result<Employee>> GetByIdAsync(int id)
     {
         var employee = Employees.FirstOrDefault(e => e.Id == id);
+        
         return Task.FromResult(employee is null 
             ? Result.Failure<Employee>(Error.NotFound($"Employee {id} not found.")) 
             : Result.Success(employee));
@@ -95,6 +142,7 @@ public sealed class EmployeeHandlers :
     public Task<Result> HandleAsync(DeleteEmployeeCommand request, CancellationToken cancellationToken)
     {
         var employee = Employees.FirstOrDefault(e => e.Id == request.Id);
+        
         if (employee is null)
         {
             return Task.FromResult<Result>(Error.NotFound());

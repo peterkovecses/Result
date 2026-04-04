@@ -39,3 +39,21 @@ jobs:
     - name: Push to NuGet
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       run: dotnet nuget push "out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
+    - name: Get Version
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      id: get_version
+      run: |
+        VERSION=$(grep '<Version>' src/Kovecses.Result/Kovecses.Result.csproj | sed -E 's/.*<Version>(.*)<\/Version>.*/\1/')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.get_version.outputs.version }}
+        name: Release v${{ steps.get_version.outputs.version }}
+        body_path: RELEASE_NOTES.md
+        files: out/*.nupkg
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -36,7 +36,7 @@ public class EmployeeHandlersTests
 
         // Assert
         result.Should().BeFailure()
-            .HaveErrorCode(ErrorCodes.NotFound);
+            .HaveError(ErrorCodes.NotFound);
     }
 
     [Fact]
@@ -50,10 +50,8 @@ public class EmployeeHandlersTests
 
         // Assert
         result.Should().BeFailure()
-            .HaveErrorCode(EmployeeErrorCodes.CannotDeleteBoss);
-            
-        result.Should().HaveError()
-            .HaveMessage("The primary administrator (The Boss) cannot be deleted from the system.");
+            .HaveError(EmployeeErrorCodes.CannotDeleteBoss)
+                .HaveMessage("The primary administrator (The Boss) cannot be deleted from the system.");
     }
 
     [Fact]
@@ -85,7 +83,7 @@ public class EmployeeHandlersTests
 
         // Assert
         result.Should().BeFailure()
-            .HaveErrorCode(ErrorCodes.Conflict);
+            .HaveError(ErrorCodes.Conflict);
 
         // Demonstrate ThrowOnValueAccess for safety checks in tests
         result.Should().ThrowOnValueAccess<InvalidOperationException>();
@@ -103,7 +101,8 @@ public class EmployeeHandlersTests
 
         // Assert
         result.Should().BeFailure()
-            .HaveErrorCode(ErrorCodes.Validation);
+            .HaveError("FullName").And
+            .HaveError("Position");
 
         result.Should()
             .HaveValidationErrorFor("FullName").Contain("required").And
@@ -111,20 +110,85 @@ public class EmployeeHandlersTests
     }
 
     [Fact]
-    public async Task CreateEmployeeValidator_WhenNameIsTooShortAndNoSpace_ShouldReturnMultipleErrorsForField()
+    public async Task HandleAsync_BulkUpdate_WhenAllSucceed_ShouldReturnSuccess()
+    {
+        // Arrange
+        var command = new BulkUpdatePositionCommand([1, 2], "Senior Officer");
+
+        // Act
+        var result = await _sut.HandleAsync(command, default);
+
+        // Assert
+        result.Should().BeSuccess();
+    }
+
+    [Fact]
+    public async Task HandleAsync_BulkUpdate_WhenSomeFail_ShouldReturnFailureWithCombinedErrors()
+    {
+        // Arrange
+        var command = new BulkUpdatePositionCommand([998, 999], "Senior Officer");
+
+        // Act
+        var result = await _sut.HandleAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveErrors()
+                .HaveCount(2)
+                .Contain(e => e.Code == ErrorCodes.NotFound && e.Message == "Employee 998 not found.")
+                .Contain(e => e.Code == ErrorCodes.NotFound && e.Message == "Employee 999 not found.");
+    }
+
+    [Fact]
+    public async Task HandleAsync_GetSummary_ShouldReturnFormattedString()
+    {
+        // Arrange
+        var createResult = await _sut.HandleAsync(new CreateEmployeeCommand("Test User", "Tester"), default);
+        var employeeId = createResult.ValueOrThrow().Id;
+
+        var query = new GetEmployeeSummaryQuery(employeeId);
+
+        // Act
+        var result = await _sut.HandleAsync(query, default);
+
+        // Assert
+        result.Should().BeSuccess()
+            .HaveData(s => s is not null 
+                           && s.Contains("Test User") 
+                           && s.Contains("Tester"));
+    }
+
+    [Fact]
+    public async Task HandleAsync_GetEmployee_WithOptionalAccess_ShouldDemonstrateValueOrDefault()
+    {
+        // Arrange
+        var query = new GetEmployeeQuery(999);
+
+        // Act
+        var result = await _sut.HandleAsync(query, default);
+
+        // Assert
+        var employee = result.ValueOrDefault();
+        
+        Assert.Null(employee);
+    }
+
+    [Fact]
+    public async Task CreateEmployeeValidator_ShouldDemonstrateCustomAssertionWithExtractMessages()
     {
         // Arrange
         var validator = new CreateEmployeeValidator();
-        var command = new CreateEmployeeCommand("Jo", "Developer"); // Too short and no space
+        var command = new CreateEmployeeCommand("Jo", ""); // Too short and empty position
 
         // Act
         var result = await validator.ValidateAsync(command, default);
 
         // Assert
-        result.Should()
-            .HaveValidationErrorFor("FullName")
-                .Contain("too short")
-                .Contain("space")
-                .ContainAll("short", "name");
+        result.Should().BeFailure();
+        
+        var error = result.Errors!.First(e => e.Code == "FullName");
+        var messages = ValidationAssertions<ResultAssertions>.ExtractMessages(error, "FullName");
+        
+        Assert.Contains(messages, m => m.Contains("too short", StringComparison.OrdinalIgnoreCase));
     }
 }

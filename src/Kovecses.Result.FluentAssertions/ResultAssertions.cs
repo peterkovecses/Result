@@ -22,9 +22,13 @@ public class ResultAssertions(Result subject)
     /// Asserts that the result is a success.
     /// </summary>
     /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
-    public ResultAssertions BeSuccess()
+    public virtual ResultAssertions BeSuccess()
     {
-        Assert.True(Subject.IsSuccess, $"Expected result to be successful, but it failed with error: {Subject.Error?.Code}");
+        var errorCodes = Subject.Errors is not null 
+            ? string.Join(", ", Subject.Errors.Select(e => e.Code)) 
+            : "none";
+
+        Assert.True(Subject.IsSuccess, $"Expected result to be successful, but it failed with errors: {errorCodes}");
         
         return this;
     }
@@ -33,7 +37,7 @@ public class ResultAssertions(Result subject)
     /// Asserts that the result is a failure.
     /// </summary>
     /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
-    public ResultAssertions BeFailure()
+    public virtual ResultAssertions BeFailure()
     {
         Assert.True(Subject.IsFailure, "Expected result to be a failure, but it was successful.");
         
@@ -41,40 +45,45 @@ public class ResultAssertions(Result subject)
     }
 
     /// <summary>
-    /// Asserts that the result has a specific error code.
+    /// Starts assertions on the errors of the result.
     /// </summary>
-    /// <param name="expectedCode">The expected error code.</param>
-    /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
-    public ResultAssertions HaveErrorCode(string expectedCode)
+    /// <returns>An <see cref="ErrorCollectionAssertions{TAssertions}"/> object.</returns>
+    public ErrorCollectionAssertions<ResultAssertions> HaveErrors()
     {
-        Assert.NotNull(Subject.Error);
-        Assert.Equal(expectedCode, Subject.Error!.Code);
+        Assert.NotNull(Subject.Errors);
         
-        return this;
+        return new ErrorCollectionAssertions<ResultAssertions>(Subject.Errors!, this);
     }
 
     /// <summary>
-    /// Starts assertions on the error of the result.
+    /// Asserts that the result contains at least one error with the specified code.
     /// </summary>
-    /// <returns>An <see cref="ErrorAssertions{TAssertions}"/> object.</returns>
-    public ErrorAssertions<ResultAssertions> HaveError()
+    /// <param name="expectedCode">The expected error code.</param>
+    /// <returns>The <see cref="ErrorAssertions{TAssertions}"/> for the found error.</returns>
+    public ErrorAssertions<ResultAssertions> HaveError(string expectedCode)
     {
-        Assert.NotNull(Subject.Error);
+        BeFailure();
+        var error = Subject.Errors!.FirstOrDefault(e => e.Code == expectedCode);
         
-        return new ErrorAssertions<ResultAssertions>(Subject.Error, this);
+        Assert.NotNull(error);
+        
+        return new ErrorAssertions<ResultAssertions>(error, this);
     }
 
     /// <summary>
     /// Asserts that the result has a validation error for the specified field.
     /// </summary>
-    /// <param name="fieldName">The name of the field.</param>
+    /// <param name="fieldName">The name of the field (Error.Code).</param>
     /// <returns>A <see cref="ValidationAssertions{TAssertions}"/> object for further assertions.</returns>
     public ValidationAssertions<ResultAssertions> HaveValidationErrorFor(string fieldName)
     {
         BeFailure();
-        Assert.Equal(ErrorType.Validation, Subject.Error!.Type);
         
-        var messages = ValidationHelper.ExtractMessages(Subject.Error!, fieldName);
+        var messages = Subject.Errors!
+            .Where(e => e.Type == ErrorType.Validation && e.Code == fieldName)
+            .Select(e => e.Message)
+            .ToList();
+
         Assert.NotEmpty(messages);
         
         return new ValidationAssertions<ResultAssertions>(messages, this);
@@ -85,7 +94,7 @@ public class ResultAssertions(Result subject)
     /// </summary>
     /// <param name="key">The metadata key.</param>
     /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
-    public ResultAssertions HaveMetadata(string key)
+    public virtual ResultAssertions HaveMetadata(string key)
     {
         Assert.NotNull(Subject.Metadata);
         Assert.Contains(key, Subject.Metadata.Keys);
@@ -99,29 +108,12 @@ public class ResultAssertions(Result subject)
     /// <param name="key">The metadata key.</param>
     /// <param name="expectedValue">The expected metadata value.</param>
     /// <returns>The <see cref="ResultAssertions"/> for further assertions.</returns>
-    public ResultAssertions HaveMetadata(string key, object? expectedValue)
+    public virtual ResultAssertions HaveMetadata(string key, object? expectedValue)
     {
         HaveMetadata(key);
         var actualValue = Subject.Metadata![key];
 
-        if (actualValue is System.Text.Json.JsonElement element)
-        {
-            object? value = element.ValueKind switch
-            {
-                System.Text.Json.JsonValueKind.String => element.GetString(),
-                System.Text.Json.JsonValueKind.Number => element.GetDouble(),
-                System.Text.Json.JsonValueKind.True => true,
-                System.Text.Json.JsonValueKind.False => false,
-                System.Text.Json.JsonValueKind.Null => null,
-                _ => element.GetRawText()
-            };
-
-            Assert.Equal(expectedValue?.ToString(), value?.ToString());
-        }
-        else
-        {
-            Assert.Equal(expectedValue, actualValue);
-        }
+        Assert.Equal(expectedValue, actualValue);
 
         return this;
     }
@@ -140,22 +132,16 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
 {
     private readonly Result<TData> _subject = subject;
 
-    /// <summary>
-    /// Asserts that the result is a success.
-    /// </summary>
-    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
-    public new ResultAssertions<TData> BeSuccess()
+    /// <inheritdoc />
+    public override ResultAssertions<TData> BeSuccess()
     {
         base.BeSuccess();
         
         return this;
     }
 
-    /// <summary>
-    /// Asserts that the result is a failure.
-    /// </summary>
-    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
-    public new ResultAssertions<TData> BeFailure()
+    /// <inheritdoc />
+    public override ResultAssertions<TData> BeFailure()
     {
         base.BeFailure();
         
@@ -189,51 +175,60 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
     }
 
     /// <summary>
-    /// Starts assertions on the error of the result.
+    /// Starts assertions on the errors of the result.
     /// </summary>
-    /// <returns>An <see cref="ErrorAssertions{TAssertions}"/> object.</returns>
-    public new ErrorAssertions<ResultAssertions<TData>> HaveError()
+    /// <returns>An <see cref="ErrorCollectionAssertions{TAssertions}"/> object.</returns>
+    public new ErrorCollectionAssertions<ResultAssertions<TData>> HaveErrors()
     {
-        Assert.NotNull(Subject.Error);
+        Assert.NotNull(Subject.Errors);
         
-        return new ErrorAssertions<ResultAssertions<TData>>(Subject.Error, this);
+        return new ErrorCollectionAssertions<ResultAssertions<TData>>(Subject.Errors!, this);
+    }
+
+    /// <summary>
+    /// Asserts that the result contains at least one error with the specified code.
+    /// </summary>
+    /// <param name="expectedCode">The expected error code.</param>
+    /// <returns>The <see cref="ErrorAssertions{TAssertions}"/> for the found error.</returns>
+    public new ErrorAssertions<ResultAssertions<TData>> HaveError(string expectedCode)
+    {
+        BeFailure();
+        var error = Subject.Errors!.FirstOrDefault(e => e.Code == expectedCode);
+        
+        Assert.NotNull(error);
+        
+        return new ErrorAssertions<ResultAssertions<TData>>(error, this);
     }
 
     /// <summary>
     /// Asserts that the result has a validation error for the specified field.
     /// </summary>
-    /// <param name="fieldName">The name of the field.</param>
+    /// <param name="fieldName">The name of the field (Error.Code).</param>
     /// <returns>A <see cref="ValidationAssertions{TAssertions}"/> object for further assertions.</returns>
     public new ValidationAssertions<ResultAssertions<TData>> HaveValidationErrorFor(string fieldName)
     {
         BeFailure();
-        Assert.Equal(ErrorType.Validation, Subject.Error!.Type);
         
-        var messages = ValidationHelper.ExtractMessages(Subject.Error!, fieldName);
+        var messages = Subject.Errors!
+            .Where(e => e.Type == ErrorType.Validation && e.Code == fieldName)
+            .Select(e => e.Message)
+            .ToList();
+
         Assert.NotEmpty(messages);
         
         return new ValidationAssertions<ResultAssertions<TData>>(messages, this);
     }
 
-    /// <summary>
-    /// Asserts that the result metadata contains the specified key.
-    /// </summary>
-    /// <param name="key">The metadata key.</param>
-    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
-    public new ResultAssertions<TData> HaveMetadata(string key)
+    /// <inheritdoc />
+    public override ResultAssertions<TData> HaveMetadata(string key)
     {
         base.HaveMetadata(key);
 
         return this;
     }
 
-    /// <summary>
-    /// Asserts that the result metadata contains the specified key and value.
-    /// </summary>
-    /// <param name="key">The metadata key.</param>
-    /// <param name="expectedValue">The expected metadata value.</param>
-    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
-    public new ResultAssertions<TData> HaveMetadata(string key, object? expectedValue)
+    /// <inheritdoc />
+    public override ResultAssertions<TData> HaveMetadata(string key, object? expectedValue)
     {
         base.HaveMetadata(key, expectedValue);
 
@@ -246,7 +241,7 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
     /// <typeparam name="TException">The type of the expected exception.</typeparam>
     /// <param name="exceptionFactory">An optional factory to create the exception to throw.</param>
     /// <returns>The caught exception for further assertions.</returns>
-    public TException ThrowOnValueAccess<TException>(Func<Error, Exception>? exceptionFactory = null) where TException : Exception
+    public TException ThrowOnValueAccess<TException>(Func<IReadOnlyList<Error>, Exception>? exceptionFactory = null) where TException : Exception
     {
         BeFailure();
         

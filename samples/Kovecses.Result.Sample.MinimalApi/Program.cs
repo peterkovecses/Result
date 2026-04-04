@@ -1,4 +1,12 @@
 var builder = WebApplication.CreateBuilder(args);
+
+// Standard practice for modern APIs: Use camelCase and string enums globally
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
+
 builder.Services.AddCore();
 var app = builder.Build();
 var employeesGroup = app.MapGroup("/employees").WithTags("Employees");
@@ -41,20 +49,43 @@ employeesGroup.MapPost("/", async (CreateEmployeeCommand command, IMediator medi
 // 4. Put - Standard REST (Async Chaining example)
 employeesGroup.MapPut("/{id:int}", async (int id, UpdateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
 {
-    if (id != command.Id) return Results.BadRequest("ID mismatch");
+    if (id != command.Id)
+    {
+        return Results.BadRequest("ID mismatch");
+    }
 
     return await mediator.SendAsync(command, ct)
         .MatchAsync(
             data => Results.Ok(data),
-            error => error.ToMinimalApiResult());
+            errors => Result.Failure(errors).ToMinimalApiResult());
 });
 
 // 5. Delete - Standard REST
 employeesGroup.MapDelete("/{id:int}", async (int id, IMediator mediator, CancellationToken ct) =>
 {
     var result = await mediator.SendAsync(new DeleteEmployeeCommand(id), ct);
-    
+
     return result.ToMinimalApiResult();
 });
+
+// 6. Post - Bulk Update (demonstrates Result.Combine)
+employeesGroup.MapPost("/bulk-update", async (BulkUpdatePositionCommand command, IMediator mediator, CancellationToken ct) =>
+{
+    var result = await mediator.SendAsync(command, ct);
+
+    return result.ToMinimalApiResult();
+});
+
+// 7. Get - Summary (demonstrates MatchAsync)
+employeesGroup.MapGet("/{id:int}/summary", async (int id, IMediator mediator, CancellationToken ct) =>
+{
+    var result = await mediator.SendAsync(new GetEmployeeSummaryQuery(id), ct);
+
+    return result.ToMinimalApiResult();
+});
+
+// 8. Get - Direct Error mapping demo
+app.MapGet("/health", () => 
+    Error.Unexpected("System check failed", "Health.ServiceDown").ToMinimalApiResult());
 
 app.Run();

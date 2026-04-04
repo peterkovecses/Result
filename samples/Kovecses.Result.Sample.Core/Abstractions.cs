@@ -71,22 +71,8 @@ public class Mediator(IServiceProvider serviceProvider) : IMediator
             
             if (validationResult.IsFailure)
             {
-                if (!typeof(TResult).IsGenericType) return (TResult)validationResult;
-                var dataType = typeof(TResult).GetGenericArguments()[0];
-                
-                var failureMethod = typeof(Result).GetMethods()
-                    .First(m => m.Name == nameof(Result.Failure) && 
-                                m.IsGenericMethod && 
-                                m.GetParameters().Any() && 
-                                m.GetParameters()[0].ParameterType == typeof(Error));
-
-                var methodParams = failureMethod.GetParameters().Length == 1 
-                    ? new object[] { validationResult.Error! } 
-                    : [validationResult.Error!, null!];
-
-                return (TResult)failureMethod
-                    .MakeGenericMethod(dataType)
-                    .Invoke(null, methodParams)!;
+                // Efficiently create a failure response of type TResult (which could be Result or Result<T>)
+                return Result.CreateFailure<TResult>(validationResult.Errors!);
             }
         }
 

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Kovecses.Result.AspNetCore.UnitTests")]
 
 namespace Kovecses.Result.AspNetCore;
 
@@ -46,7 +49,7 @@ public static class ResultExtensions
         }
 
         return result.Data is null 
-            ? Results.NoContent()
+            ? Results.NoContent() 
             : Results.Ok(result.Data);
     }
 
@@ -97,84 +100,84 @@ public static class ResultExtensions
     /// </summary>
     /// <param name="error">The error to convert.</param>
     /// <returns>An <see cref="IResult"/> representing the error.</returns>
-    public static IResult ToMinimalApiResult(this Error error) => MapToProblem(Result.Failure(error), false);
+    public static IResult ToMinimalApiResult(this Error error) 
+        => MapToProblem(Result.Failure(error), false);
 
     /// <summary>
     /// Converts an <see cref="Error"/> to an <see cref="IActionResult"/> for Controllers.
     /// </summary>
     /// <param name="error">The error to convert.</param>
     /// <returns>An <see cref="IActionResult"/> representing the error.</returns>
-    public static IActionResult ToActionResult(this Error error) => MapToActionResultProblem(Result.Failure(error), false);
+    public static IActionResult ToActionResult(this Error error) 
+        => MapToActionResultProblem(Result.Failure(error), false);
 
     private static IResult MapToProblem(Result result, bool includeResultInResponse)
     {
-        var error = result.Error ?? throw new InvalidOperationException("Failure result must have an error.");
-        var statusCode = GetStatusCode(error.Type);
+        var errors = result.Errors ?? throw new InvalidOperationException("Failure result must have errors.");
+        var firstError = errors[0];
+        var statusCode = ErrorResponseHelper.GetStatusCode(firstError.Type);
 
         if (includeResultInResponse)
         {
             return Results.Json(result, statusCode: statusCode);
         }
 
+        if (errors.All(e => e.Type == ErrorType.Validation))
+        {
+            return Results.ValidationProblem(
+                errors: ErrorResponseHelper.GetValidationDictionary(errors),
+                title: "Validation Error",
+                statusCode: StatusCodes.Status400BadRequest
+            );
+        }
+
         return Results.Problem(
-            title: GetTitle(error.Type),
-            detail: error.Message,
+            title: ErrorResponseHelper.GetTitle(firstError.Type),
+            detail: firstError.Message,
             statusCode: statusCode,
-            extensions: error.Metadata?.ToDictionary(x => x.Key, x => (object?)x.Value)
+            extensions: ErrorResponseHelper.GetExtensions(errors, firstError)
         );
     }
 
     private static ObjectResult MapToActionResultProblem(Result result, bool includeResultInResponse)
     {
-        var error = result.Error ?? throw new InvalidOperationException("Failure result must have an error.");
-        var statusCode = GetStatusCode(error.Type);
+        var errors = result.Errors ?? throw new InvalidOperationException("Failure result must have errors.");
+        var firstError = errors[0];
+        var statusCode = ErrorResponseHelper.GetStatusCode(firstError.Type);
 
         if (includeResultInResponse)
         {
             return new ObjectResult(result) { StatusCode = statusCode };
         }
 
+        if (errors.All(e => e.Type == ErrorType.Validation))
+        {
+            var validationProblemDetails = new ValidationProblemDetails(ErrorResponseHelper.GetValidationDictionary(errors))
+            {
+                Title = "Validation Error",
+                Status = StatusCodes.Status400BadRequest
+            };
+            
+            return new ObjectResult(validationProblemDetails) { StatusCode = StatusCodes.Status400BadRequest };
+        }
+
         var problemDetails = new ProblemDetails
         {
-            Title = GetTitle(error.Type),
-            Detail = error.Message,
+            Title = ErrorResponseHelper.GetTitle(firstError.Type),
+            Detail = firstError.Message,
             Status = statusCode
         };
 
-        if (error.Metadata != null)
+        var extensions = ErrorResponseHelper.GetExtensions(errors, firstError);
+
+        if (extensions is not null)
         {
-            foreach (var kvp in error.Metadata)
+            foreach (var (key, value) in extensions)
             {
-                problemDetails.Extensions.Add(kvp.Key, kvp.Value);
+                problemDetails.Extensions.Add(key, value);
             }
         }
 
         return new ObjectResult(problemDetails) { StatusCode = statusCode };
     }
-
-    private static int GetStatusCode(ErrorType type) => type switch
-    {
-        ErrorType.Validation => StatusCodes.Status400BadRequest,
-        ErrorType.NotFound => StatusCodes.Status404NotFound,
-        ErrorType.Conflict => StatusCodes.Status409Conflict,
-        ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
-        ErrorType.Forbidden => StatusCodes.Status403Forbidden,
-        ErrorType.Timeout => StatusCodes.Status408RequestTimeout,
-        ErrorType.Unexpected => StatusCodes.Status500InternalServerError,
-        ErrorType.Canceled => StatusCodes.Status400BadRequest,
-        _ => StatusCodes.Status400BadRequest
-    };
-
-    private static string GetTitle(ErrorType type) => type switch
-    {
-        ErrorType.Validation => "Validation Error",
-        ErrorType.NotFound => "Not Found",
-        ErrorType.Conflict => "Conflict",
-        ErrorType.Unauthorized => "Unauthorized",
-        ErrorType.Forbidden => "Forbidden",
-        ErrorType.Timeout => "Request Timeout",
-        ErrorType.Unexpected => "Internal Server Error",
-        ErrorType.Canceled => "Operation Canceled",
-        _ => "Bad Request"
-    };
 }

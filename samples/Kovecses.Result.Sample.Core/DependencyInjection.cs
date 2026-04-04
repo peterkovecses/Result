@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddTransient<IRequestHandler<CreateEmployeeCommand, Result<Employee>>, EmployeeHandlers>();
         services.AddTransient<IRequestHandler<UpdateEmployeeCommand, Result<EmployeeDto>>, EmployeeHandlers>();
         services.AddTransient<IRequestHandler<DeleteEmployeeCommand, Result>, EmployeeHandlers>();
+        services.AddTransient<IRequestHandler<BulkUpdatePositionCommand, Result>, EmployeeHandlers>();
+        services.AddTransient<IRequestHandler<GetEmployeeSummaryQuery, Result<string>>, EmployeeHandlers>();
         
         return services;
     }

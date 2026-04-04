@@ -15,7 +15,9 @@ public static class ResultExtensions
     {
         var result = await task;
 
-        return result.IsSuccess ? await next() : result;
+        return result.IsSuccess 
+            ? await next() 
+            : result;
     }
 
     /// <summary>
@@ -30,7 +32,9 @@ public static class ResultExtensions
     {
         var result = await task;
 
-        return result.IsSuccess ? Result.Success(map(result.Data!)) : Result.Failure<TNewData>(result.Error!);
+        return result.IsSuccess 
+            ? Result.Success(map(result.Data!)) 
+            : Result.Failure<TNewData>(result.Errors!);
     }
 
     /// <summary>
@@ -45,7 +49,9 @@ public static class ResultExtensions
     {
         var result = await task;
 
-        return result.IsSuccess ? Result.Success(await map(result.Data!)) : Result.Failure<TNewData>(result.Error!);
+        return result.IsSuccess 
+            ? Result.Success(await map(result.Data!)) 
+            : Result.Failure<TNewData>(result.Errors!);
     }
 
     /// <summary>
@@ -59,7 +65,10 @@ public static class ResultExtensions
     public static async Task<Result<TNewData>> BindAsync<TData, TNewData>(this Task<Result<TData>> task, Func<TData, Task<Result<TNewData>>> next)
     {
         var result = await task;
-        return result.IsSuccess ? await next(result.Data!) : Result.Failure<TNewData>(result.Error!);
+
+        return result.IsSuccess 
+            ? await next(result.Data!) 
+            : Result.Failure<TNewData>(result.Errors!);
     }
 
     /// <summary>
@@ -127,13 +136,15 @@ public static class ResultExtensions
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
     /// <param name="task">The task returning a result with data.</param>
     /// <param name="onSuccess">The function to execute on success with the data.</param>
-    /// <param name="onFailure">The function to execute on failure with the error.</param>
+    /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, TResult> onSuccess, Func<Error, TResult> onFailure)
+    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, TResult> onSuccess, Func<IReadOnlyList<Error>, TResult> onFailure)
     {
         var result = await task;
 
-        return result.IsSuccess ? onSuccess(result.Data!) : onFailure(result.Error!);
+        return result.IsSuccess 
+            ? onSuccess(result.Data!) 
+            : onFailure(result.Errors!);
     }
 
     /// <summary>
@@ -143,12 +154,14 @@ public static class ResultExtensions
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
     /// <param name="task">The task returning a result with data.</param>
     /// <param name="onSuccess">The asynchronous function to execute on success with the data.</param>
-    /// <param name="onFailure">The asynchronous function to execute on failure with the error.</param>
+    /// <param name="onFailure">The asynchronous function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
-    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, Task<TResult>> onSuccess, Func<Error, Task<TResult>> onFailure)
+    public static async Task<TResult> MatchAsync<TData, TResult>(this Task<Result<TData>> task, Func<TData, Task<TResult>> onSuccess, Func<IReadOnlyList<Error>, Task<TResult>> onFailure)
     {
         var result = await task;
         
-        return result.IsSuccess ? await onSuccess(result.Data!) : await onFailure(result.Error!);
+        return result.IsSuccess 
+            ? await onSuccess(result.Data!) 
+            : await onFailure(result.Errors!);
     }
 }
