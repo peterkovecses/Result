@@ -11,13 +11,13 @@ public sealed record BulkUpdatePositionCommand(List<int> Ids, string NewPosition
 public sealed record DeleteEmployeeCommand(int Id) : IRequest<Result>;
 
 public sealed record GetEmployeeSummaryQuery(int Id) : IRequest<Result<string>>;
-
 public sealed class EmployeeHandlers : 
     IRequestHandler<GetEmployeeQuery, Result<Employee>>,
     IRequestHandler<CreateEmployeeCommand, Result<Employee>>,
     IRequestHandler<UpdateEmployeeCommand, Result<EmployeeDto>>,
     IRequestHandler<DeleteEmployeeCommand, Result>,
     IRequestHandler<BulkUpdatePositionCommand, Result>,
+    IRequestHandler<RegisterEmployeeCommand, Result<Employee>>,
     IRequestHandler<GetEmployeeSummaryQuery, Result<string>>
 {
     private static readonly List<Employee> Employees =
@@ -41,6 +41,46 @@ public sealed class EmployeeHandlers :
         if (Employees.Any(e => e.FullName == request.FullName))
         {
             return Task.FromResult<Result<Employee>>(Error.Conflict($"Employee with name {request.FullName} already exists."));
+        }
+
+        var newEmployee = new Employee(Employees.Max(e => e.Id) + 1, request.FullName, request.Position);
+        Employees.Add(newEmployee);
+
+        return Task.FromResult<Result<Employee>>(newEmployee);
+    }
+
+    public Task<Result<Employee>> HandleAsync(RegisterEmployeeCommand request, CancellationToken cancellationToken)
+    {
+        // Aggregating multiple domain validation errors into one error 
+        // while also keeping track of other structural errors in a single List.
+        List<Error> errors = [];
+
+        // 1. Domain Conflict
+        if (Employees.Any(e => e.FullName == request.FullName))
+        {
+            errors.Add(Error.Conflict($"Employee {request.FullName} already exists."));
+        }
+
+        // 2. Validation Errors (grouped)
+        var validationMetadata = new Dictionary<string, object>();
+        if (request.Salary < 0)
+            validationMetadata["Salary"] = new[] { "Salary cannot be negative." };
+
+        if (string.IsNullOrWhiteSpace(request.Position))
+            validationMetadata["Position"] = new[] { "Position is required." };
+
+        if (validationMetadata.Count > 0)
+        {
+            errors.Add(Error.Validation(
+                code: ErrorCodes.Validation,
+                message: "One or more validation errors occurred.",
+                metadata: validationMetadata));
+        }
+
+        if (errors.Count > 0)
+        {
+            // Implicitly converts List<Error> to Result<Employee>
+            return Task.FromResult<Result<Employee>>(errors);
         }
 
         var newEmployee = new Employee(Employees.Max(e => e.Id) + 1, request.FullName, request.Position);

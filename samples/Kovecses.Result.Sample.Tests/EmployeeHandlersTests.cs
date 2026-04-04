@@ -219,6 +219,26 @@ public class EmployeeHandlersTests
     }
 
     [Fact]
+    public async Task HandleAsync_RegisterEmployee_WithMultipleErrors_ShouldAggregateAndConvertImplicilty()
+    {
+        // Arrange
+        var command = new RegisterEmployeeCommand("The Boss", "", -100);
+
+        // Act
+        var result = await _sut.HandleAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveError(ErrorCodes.Conflict).And
+            .HaveError(ErrorCodes.Validation)
+                .HaveValidationProperty("Salary")
+                    .Contain("negative")
+                    .And
+                .HaveValidationProperty("Position")
+                    .Contain("required");
+    }
+
+    [Fact]
     public async Task CreateEmployeeValidator_ShouldDemonstrateCustomAssertionWithExtractMessages()
     {
         // Arrange

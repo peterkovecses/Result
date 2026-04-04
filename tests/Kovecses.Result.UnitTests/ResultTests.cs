@@ -105,6 +105,68 @@ public class ResultTests
     }
 
     [Fact]
+    public void ImplicitOperator_WhenAssigningErrorArrayToResult_ShouldReturnFailure()
+    {
+        // Arrange
+        Error[] errors = [Error.Failure("Msg1", "Code1"), Error.Failure("Msg2", "Code2")];
+
+        // Act
+        Result result = errors;
+
+        // Assert
+        result.Should().BeFailure();
+        Assert.NotNull(result.Errors);
+        Assert.Equal(2, result.Errors.Count);
+        Assert.Equal("Code1", result.Errors[0].Code);
+        Assert.Equal("Code2", result.Errors[1].Code);
+    }
+
+    [Fact]
+    public void ImplicitOperator_WhenAssigningErrorListToResult_ShouldReturnFailure()
+    {
+        // Arrange
+        var errors = new List<Error> { Error.Failure("Msg1", "Code1"), Error.Failure("Msg2", "Code2") };
+
+        // Act
+        Result result = errors;
+
+        // Assert
+        result.Should().BeFailure();
+        Assert.NotNull(result.Errors);
+        Assert.Equal(2, result.Errors.Count);
+    }
+
+    [Fact]
+    public void ImplicitOperator_WhenAssigningErrorArrayToGenericResult_ShouldReturnFailure()
+    {
+        // Arrange
+        Error[] errors = [Error.Failure("Msg1", "Code1")];
+
+        // Act
+        Result<int> result = errors;
+
+        // Assert
+        result.Should().BeFailure();
+        Assert.NotNull(result.Errors);
+        Assert.Single(result.Errors);
+    }
+
+    [Fact]
+    public void ImplicitOperator_WhenAssigningErrorListToGenericResult_ShouldReturnFailure()
+    {
+        // Arrange
+        var errors = new List<Error> { Error.Failure("Msg1", "Code1") };
+
+        // Act
+        Result<string> result = errors;
+
+        // Assert
+        result.Should().BeFailure();
+        Assert.NotNull(result.Errors);
+        Assert.Single(result.Errors);
+    }
+
+    [Fact]
     public void Serialization_WhenSuccess_ShouldSerializeAndDeserializeCorrectly()
     {
         // Arrange

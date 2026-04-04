@@ -1,27 +1,9 @@
-# Release Notes - v2.4.1
+# Release Notes - Kovecses.Result 2.5.0
 
-## 🐛 Bug Fix: JSON Deserialization Support for Validation Metadata
+## New Features
+- **Implicit Error Collection Conversions:** Added implicit operators for `Error[]` and `List<Error>` to both `Result` and `Result<T>`. This enables cleaner code when aggregating multiple domain or validation errors.
+- **Collection Expression Support:** Full support for C# 12 collection expressions (e.g., `return [Error.Failure("...")]`).
+- **Boilerplate Reduction:** Handlers can now return error lists or arrays directly, which are automatically converted to the appropriate failure result type.
 
-When validation errors with metadata were serialized to JSON and deserialized, the `HaveValidationProperty()` FluentAssertions method failed because metadata values became `List<object>` instead of `List<string>`.
-
-**Fixed:** Added support for `List<object>` in `HaveValidationProperty()` to handle JSON deserialization scenarios. Now works seamlessly in integration tests and HTTP round-trips.
-
-**Example:**
-```csharp
-var error = Error.Validation(
-    "General.Validation",
-    "Validation failed",
-    new() { ["Email"] = new[] { "Email is required" } }
-);
-
-var json = JsonSerializer.Serialize(error);
-var deserialized = JsonSerializer.Deserialize<Error>(json);
-
-// ✅ Now works - handles List<object> from deserialization
-deserialized.Should()
-    .HaveValidationProperty("Email")
-    .Contain("Email is required");
-```
-
-**Version Bump:** Patch release (2.4.0 → 2.4.1)  
-**Breaking Changes:** None
+## Improvements
+- Improved documentation and samples showcasing realistic error aggregation patterns.

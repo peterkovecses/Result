@@ -152,6 +152,20 @@ public class Result
         => Failure(error);
 
     /// <summary>
+    /// Implicitly converts an array of <see cref="Error"/> to a failed <see cref="Result"/>.
+    /// </summary>
+    /// <param name="errors">The errors.</param>
+    public static implicit operator Result(Error[] errors)
+        => Failure(errors);
+
+    /// <summary>
+    /// Implicitly converts a list of <see cref="Error"/> to a failed <see cref="Result"/>.
+    /// </summary>
+    /// <param name="errors">The errors.</param>
+    public static implicit operator Result(List<Error> errors)
+        => Failure(errors);
+
+    /// <summary>
     /// Executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
     /// </summary>
     /// <typeparam name="TResult">The type of the result after matching.</typeparam>
@@ -315,6 +329,20 @@ public class Result<TData> : Result
     /// <param name="error">The error.</param>
     public static implicit operator Result<TData>(Error error)
         => Failure<TData>(error);
+
+    /// <summary>
+    /// Implicitly converts an array of <see cref="Error"/> to a failed <see cref="Result{TData}"/>.
+    /// </summary>
+    /// <param name="errors">The errors.</param>
+    public static implicit operator Result<TData>(Error[] errors)
+        => Failure<TData>(errors);
+
+    /// <summary>
+    /// Implicitly converts a list of <see cref="Error"/> to a failed <see cref="Result{TData}"/>.
+    /// </summary>
+    /// <param name="errors">The errors.</param>
+    public static implicit operator Result<TData>(List<Error> errors)
+        => Failure<TData>(errors);
 
     /// <summary>
     /// Executes the onSuccess function if the result is successful, otherwise executes the onFailure function.

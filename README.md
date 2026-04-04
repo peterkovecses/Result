@@ -64,20 +64,33 @@ The Result pattern encapsulates the outcome of an operation. Instead of relying 
 The core library contains the fundamental types and functional extensions. It supports multiple errors per result and implicit conversions.
 
 ### Basic Usage
+The library supports powerful implicit conversions to reduce boilerplate, including support for C# 12 collection expressions.
+
 ```csharp
 // Success (with or without data)
 public Result Create() => Result.Success();
-public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer"); // Implicit conversion
+public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer"); // Implicit data conversion
 
-// Failure (Single or Multiple)
-public Result<Employee> Get(int id) => Error.NotFound($"Employee {id} not found.");
-public Result Validate(User user) => Result.Failure([
-    Error.Validation("Email", "Required"),
-    Error.Validation("Age", "Must be 18+")
-]);
+// Failure (Single Error)
+public Result<Employee> Get(int id) => Error.NotFound($"Employee {id} not found."); // Implicit error conversion
 
-// Convenience overloads
-public Result Fail() => Result.Failure("Error.Code", "Error message");
+// Failure (Multiple Errors using Collection Expressions - C# 12)
+public Result Validate(User user) => [
+    Error.Validation("Email", "Email is required."),
+    Error.Validation("Age", "Must be 18 or older.")
+]; // Implicitly converts Error[] to Result
+
+// Failure (List of Errors)
+public Result<Employee> RegisterEmployee(RegisterRequest request) {
+    List<Error> errors = [];
+    if (string.IsNullOrEmpty(request.Name)) errors.Add(Error.Validation("Name", "Required"));
+    if (request.Salary < 0) errors.Add(Error.Validation("Salary", "Positive only"));
+
+    if (errors.Count > 0) 
+        return errors; // Implicitly converts List<Error> to Result<Employee>
+
+    return new Employee(request.Name, request.Salary);
+}
 ```
 
 ### Functional Extensions (Railway-Oriented Programming)

@@ -10,6 +10,8 @@ public record Employee(int Id, string FullName, string Position);
 /// </summary>
 public record EmployeeDto(int Id, string DisplayName, string JobTitle);
 
+public sealed record RegisterEmployeeCommand(string FullName, string Position, decimal Salary) : IRequest<Result<Employee>>;
+
 /// <summary>
 /// Marker interface for a request that returns a Result.
 /// </summary>

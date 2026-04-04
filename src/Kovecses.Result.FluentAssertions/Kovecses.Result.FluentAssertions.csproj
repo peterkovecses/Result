@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Kovecses.Result.FluentAssertions</AssemblyName>
     <RootNamespace>Kovecses.Result.FluentAssertions</RootNamespace>
-    <Version>2.4.1</Version>
+    <Version>2.5.0</Version>
     <Authors>Peter Kovecses</Authors>
     <Description>Fluent assertions for Kovecses.Result using xUnit.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
