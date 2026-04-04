@@ -77,7 +77,16 @@ employeesGroup.MapGet("/{id:int}/summary", async (int id, IMediator mediator, Ca
     return result.ToMinimalApiResult();
 });
 
-// 8. Get - Direct Error mapping demo
+// 8. Post - Aggregated Validation with Wrapped Result (demonstrates metadata in full Result response)
+employeesGroup.MapPost("/validate-wrapped", async (CreateEmployeeCommand command) =>
+{
+    var validator = new CreateEmployeeAggregatedValidator();
+    var result = await validator.ValidateAsync(command, default);
+
+    return result.ToMinimalApiResult(includeResultInResponse: true);
+});
+
+// 9. Get - Direct Error mapping demo
 app.MapGet("/health", () => 
     Error.Unexpected("System check failed", "Health.ServiceDown").ToMinimalApiResult());
 

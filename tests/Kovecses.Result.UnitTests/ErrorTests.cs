@@ -46,7 +46,7 @@ public class ErrorTests
         var metadata = new Dictionary<string, object> { { "Field", "Required" } };
 
         // Act
-        var error = Error.Validation(code, message) with { Metadata = metadata };
+        var error = Error.Validation(code, message, metadata);
 
         // Assert
         error.Should().HaveCode(code)
@@ -157,5 +157,41 @@ public class ErrorTests
         // Assert
         error.Should().HaveCode(ErrorCodes.Canceled)
             .HaveType(ErrorType.Canceled);
+    }
+
+    /// <summary>
+    /// Demonstrates aggregated validation errors with multiple field-level failures.
+    /// This is the recommended pattern for handling bulk validation in APIs.
+    /// Metadata keys are property names, values are arrays of validation messages.
+    /// </summary>
+    [Fact]
+    public void Validation_WithAggregatedFieldMetadata_ShouldOrganizeErrorsByProperty()
+    {
+        // Arrange - 3 validation errors: 2 on Email, 1 on Password
+        var validationMetadata = new Dictionary<string, object>
+        {
+            ["Email"] = new[]
+            {
+                "Email is required.",
+                "Email format is invalid."
+            },
+            ["Password"] = new[]
+            {
+                "Password must be at least 8 characters."
+            }
+        };
+
+        // Act
+        var error = Error.Validation(
+            ErrorCodes.Validation,
+            "Validation failed.",
+            validationMetadata
+        );
+
+        // Assert
+        error.Should().HaveCode(ErrorCodes.Validation)
+            .HaveType(ErrorType.Validation)
+            .HaveMetadata("Email")
+            .HaveMetadata("Password");
     }
 }

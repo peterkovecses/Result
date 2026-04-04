@@ -112,9 +112,10 @@ public record Error
     /// </summary>
     /// <param name="code">The error code.</param>
     /// <param name="message">The error message.</param>
+    /// <param name="metadata">Optional metadata associated with the validation error (e.g., field-level details).</param>
     /// <returns>A new validation <see cref="Error"/>.</returns>
-    public static Error Validation(string code, string message)
-        => new(code, message, ErrorType.Validation);
+    public static Error Validation(string code, string message, Dictionary<string, object>? metadata = null)
+        => new(code, message, ErrorType.Validation, metadata);
 
     /// <summary>
     /// Creates a "NotFound" error.

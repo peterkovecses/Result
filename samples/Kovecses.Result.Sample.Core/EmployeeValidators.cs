@@ -14,17 +14,15 @@ public sealed class CreateEmployeeValidator : IValidator<CreateEmployeeCommand>
         {
             errors.Add(Error.Validation("FullName", "Name is required."));
         }
-        else
+        
+        if (request.FullName is { Length: > 0, Length: < 3 })
         {
-            if (request.FullName.Length < 3)
-            {
-                errors.Add(Error.Validation("FullName", "Name is too short."));
-            }
+            errors.Add(Error.Validation("FullName", "Name is too short."));
+        }
 
-            if (!request.FullName.Contains(' '))
-            {
-                errors.Add(Error.Validation("FullName", "Name must contain at least a first and last name separated by a space."));
-            }
+        if (!string.IsNullOrEmpty(request.FullName) && !request.FullName.Contains(' '))
+        {
+            errors.Add(Error.Validation("FullName", "Name must contain at least a first and last name separated by a space."));
         }
 
         // Position validation
@@ -36,6 +34,58 @@ public sealed class CreateEmployeeValidator : IValidator<CreateEmployeeCommand>
         if (errors.Count > 0)
         {
             return Task.FromResult(Result.Failure(errors));
+        }
+
+        return Task.FromResult(Result.Success());
+    }
+}
+
+/// <summary>
+/// Validator with aggregated validation error metadata for demonstration purposes.
+/// </summary>
+public sealed class CreateEmployeeAggregatedValidator : IValidator<CreateEmployeeCommand>
+{
+    public Task<Result> ValidateAsync(CreateEmployeeCommand request, CancellationToken cancellationToken)
+    {
+        var validationMessages = new Dictionary<string, object>();
+        var fullNameMessages = new List<string>();
+        var positionMessages = new List<string>();
+
+        // FullName validation
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            fullNameMessages.Add("Name is required.");
+        }
+        
+        if (request.FullName is { Length: > 0, Length: < 3 })
+        {
+            fullNameMessages.Add("Name is too short.");
+        }
+
+        if (!string.IsNullOrEmpty(request.FullName) && !request.FullName.Contains(' '))
+        {
+            fullNameMessages.Add("Name must contain at least a first and last name separated by a space.");
+        }
+
+        // Position validation
+        if (string.IsNullOrWhiteSpace(request.Position))
+        {
+            positionMessages.Add("Position is required.");
+        }
+
+        if (fullNameMessages.Count > 0)
+        {
+            validationMessages["FullName"] = fullNameMessages;
+        }
+
+        if (positionMessages.Count > 0)
+        {
+            validationMessages["Position"] = positionMessages;
+        }
+
+        if (validationMessages.Count > 0)
+        {
+            return Task.FromResult(Result.Failure(Error.Validation(ErrorCodes.Validation, "Validation failed.", validationMessages)));
         }
 
         return Task.FromResult(Result.Success());

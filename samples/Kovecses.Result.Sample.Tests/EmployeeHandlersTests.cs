@@ -110,6 +110,26 @@ public class EmployeeHandlersTests
     }
 
     [Fact]
+    public async Task CreateEmployeeAggregatedValidator_WithAggregatedValidation_ShouldAllowChaining()
+    {
+        // Arrange
+        var validator = new CreateEmployeeAggregatedValidator();
+        var command = new CreateEmployeeCommand("J", ""); // Too short name, empty position
+
+        // Act
+        var result = await validator.ValidateAsync(command, default);
+
+        // Assert - Demonstrate chaining with HaveValidationProperty
+        result.Should().BeFailure()
+            .HaveError(ErrorCodes.Validation)
+            .HaveValidationProperty("FullName")
+                .Contain("too short")
+                .And
+            .HaveValidationProperty("Position")
+                .Contain("required");
+    }
+
+    [Fact]
     public async Task HandleAsync_BulkUpdate_WhenAllSucceed_ShouldReturnSuccess()
     {
         // Arrange

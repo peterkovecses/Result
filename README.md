@@ -138,7 +138,49 @@ public static class UserErrors {
 // Attach Success Metadata
 var metadata = new Dictionary<string, object> { { "TraceId", "abc-123" } };
 return Result.Success(data, metadata);
+
+// Validation errors with field-level metadata (recommended pattern)
+// Metadata keys are property names, values are validation message arrays
+var validationMetadata = new Dictionary<string, object>
+{
+    ["Email"] = new[] { "Email is required.", "Email format is invalid." },
+    ["Password"] = new[] { "Password must be at least 8 characters." }
+};
+
+var validationError = Error.Validation(
+    ErrorCodes.Validation,
+    "Validation failed.",
+    validationMetadata
+);
+
+var result = Result.Failure(validationError);
 ```
+
+**Validation Error Response Format:**
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "General.Validation",
+      "message": "Validation failed.",
+      "type": 2,
+      "metadata": {
+        "Email": [
+          "Email is required.",
+          "Email format is invalid."
+        ],
+        "Password": [
+          "Password must be at least 8 characters."
+        ]
+      }
+    }
+  ]
+}
+```
+
+This pattern is recommended for handling multiple validation errors in application layers (e.g., MediatR ValidationBehavior). Clients can easily parse and display field-level errors directly from metadata without additional processing.
+
 
 ### Safety Helpers
 Fail fast or provide fallbacks when certain of the outcome.
@@ -276,6 +318,57 @@ public void Test_Operation()
     result.Should().ThrowOnValueAccess<InvalidOperationException>();
 }
 ```
+
+### Aggregated Validation Errors with Metadata
+
+When validating multiple fields, create a single aggregated validation error with metadata containing field-level messages:
+
+```csharp
+public async Task<Result> ValidateAsync(CreateUserCommand request)
+{
+    var validationMessages = new Dictionary<string, object>();
+    
+    if (string.IsNullOrEmpty(request.FullName))
+        validationMessages["FullName"] = new[] { "Name is required." };
+    
+    if (request.Position is not { Length: >= 3 })
+        validationMessages["Position"] = new[] { "Position must be at least 3 characters." };
+    
+    if (validationMessages.Count > 0)
+        return Result.Failure(Error.Validation(ErrorCodes.Validation, "Validation failed.", validationMessages));
+    
+    return Result.Success();
+}
+```
+
+Assert with chainable fluent syntax:
+
+```csharp
+[Fact]
+public async Task CreateUser_WithValidationFailures_ShouldAggregateErrors()
+{
+    var result = await _validator.ValidateAsync(new CreateUserCommand 
+    { 
+        FullName = "", 
+        Position = "PM"  // Too short
+    });
+    
+    result.Should().BeFailure()
+        .HaveError(ErrorCodes.Validation)
+        .HaveValidationProperty("FullName")
+            .Contain("required")
+            .And
+        .HaveValidationProperty("Position")
+            .Contain("at least 3 characters");
+}
+```
+
+`HaveValidationProperty()` returns a chainable `ValidationPropertyAssertions` with:
+- `.Contain(string message)` - Assert message contains text
+- `.ContainAll(params string[] messages)` - Assert all messages are present
+- `.HaveCount(int expected)` - Assert exact message count
+- `.BeExactly(params string[] messages)` - Assert exact match
+- `.And` - Chain back to error assertions for multiple property checks
 
 ### Custom Assertions
 If you need to write custom assertions for validation errors, you can use the `ValidationAssertions.ExtractMessages` helper to retrieve and normalize error messages from an `Error` object regardless of how they are stored (JsonElement, List, etc.).

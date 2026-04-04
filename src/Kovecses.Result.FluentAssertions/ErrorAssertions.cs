@@ -97,6 +97,48 @@ public class ErrorAssertions(Error? subject)
         
         return this;
     }
+
+    /// <summary>
+    /// Asserts that the error contains validation messages for the specified property name.
+    /// The property name must be a key in the metadata with an array of message strings as the value.
+    /// </summary>
+    /// <param name="propertyName">The property name to check for validation messages.</param>
+    /// <returns>The <see cref="ValidationPropertyAssertions"/> for further assertions on the messages.</returns>
+    public virtual ValidationPropertyAssertions HaveValidationProperty(string propertyName)
+    {
+        NotBeNull();
+        Assert.NotNull(Subject!.Metadata);
+        Assert.Contains(propertyName, Subject.Metadata.Keys);
+
+        var value = Subject.Metadata[propertyName];
+
+        // Handle string[]
+        if (value is string[] messageArray)
+        {
+            Assert.NotEmpty(messageArray);
+
+            return new ValidationPropertyAssertions(messageArray.ToList());
+        }
+
+        // Handle List<string>
+        if (value is List<string> messageList)
+        {
+            Assert.NotEmpty(messageList);
+
+            return new ValidationPropertyAssertions(messageList);
+        }
+
+        // Handle IEnumerable<string>
+        if (value is IEnumerable<string> enumerable)
+        {
+            var messages = enumerable.ToList();
+            Assert.NotEmpty(messages);
+
+            return new ValidationPropertyAssertions(messages);
+        }
+
+        throw new InvalidOperationException($"Expected validation messages for property '{propertyName}' to be a string array or list, but got {value?.GetType().Name ?? "null"}");
+    }
 }
 
 /// <summary>
@@ -162,5 +204,42 @@ public class ErrorAssertions<TParent>(Error? subject, TParent parent) : ErrorAss
         base.HaveMetadata(key, expectedValue);
         
         return this;
+    }
+
+    /// <inheritdoc />
+    public override ValidationPropertyAssertions HaveValidationProperty(string propertyName)
+    {
+        NotBeNull();
+        Assert.NotNull(Subject!.Metadata);
+        Assert.Contains(propertyName, Subject.Metadata.Keys);
+
+        var value = Subject.Metadata[propertyName];
+
+        // Handle string[]
+        if (value is string[] messageArray)
+        {
+            Assert.NotEmpty(messageArray);
+
+            return new ValidationPropertyAssertions(messageArray.ToList(), this);
+        }
+
+        // Handle List<string>
+        if (value is List<string> messageList)
+        {
+            Assert.NotEmpty(messageList);
+
+            return new ValidationPropertyAssertions(messageList, this);
+        }
+
+        // Handle IEnumerable<string>
+        if (value is IEnumerable<string> enumerable)
+        {
+            var messages = enumerable.ToList();
+            Assert.NotEmpty(messages);
+
+            return new ValidationPropertyAssertions(messages, this);
+        }
+
+        throw new InvalidOperationException($"Expected validation messages for property '{propertyName}' to be a string array or list, but got {value?.GetType().Name ?? "null"}");
     }
 }
