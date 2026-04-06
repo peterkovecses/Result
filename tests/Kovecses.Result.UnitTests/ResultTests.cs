@@ -206,7 +206,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Act
-        var output = result.Match(() => "Success", errors => "Failure");
+        var output = result.Match(() => "Success", (Error[] errors) => "Failure");
 
         // Assert
         Assert.Equal("Success", output);
@@ -219,7 +219,7 @@ public class ResultTests
         var result = Result.Failure(Error.NotFound());
 
         // Act
-        var output = result.Match(() => "Success", errors => "Failure");
+        var output = result.Match(() => "Success", (Error[] errors) => "Failure");
 
         // Assert
         Assert.Equal("Failure", output);
@@ -232,7 +232,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Act
-        var output = await result.MatchAsync(() => Task.FromResult("Success"), errors => Task.FromResult("Failure"));
+        var output = await result.MatchAsync(() => Task.FromResult("Success"), (Error[] errors) => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Success", output);
@@ -245,7 +245,7 @@ public class ResultTests
         var result = Result.Success("Data");
 
         // Act
-        var output = result.Match(data => data, errors => "Failure");
+        var output = result.Match(data => data, (Error[] errors) => "Failure");
 
         // Assert
         Assert.Equal("Data", output);
@@ -258,7 +258,7 @@ public class ResultTests
         var result = Result.Success();
 
         // Act
-        var output = await result.MatchAsync(() => Task.FromResult("Success"), errors => Task.FromResult("Failure"));
+        var output = await result.MatchAsync(() => Task.FromResult("Success"), (Error[] errors) => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("Success", output);
@@ -273,7 +273,7 @@ public class ResultTests
         // Act
         var output = await result.MatchAsync(
             data => Task.FromResult(data.ToString()), 
-            errors => Task.FromResult("Failure"));
+            (Error[] errors) => Task.FromResult("Failure"));
 
         // Assert
         Assert.Equal("10", output);
@@ -820,5 +820,113 @@ public class ResultTests
 
         // Assert
         result.Should().BeFailure().HaveError(ErrorCodes.NotFound);
+    }
+
+    [Fact]
+    public void FirstError_WhenFailure_ShouldReturnFirstError()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Validation("V.1", "Msg 1") };
+        var result = Result.Failure(errors);
+
+        // Assert
+        Assert.Equal(errors[0], result.FirstError);
+    }
+
+    [Fact]
+    public void FirstError_WhenSuccess_ShouldReturnNull()
+    {
+        // Act
+        var result = Result.Success();
+
+        // Assert
+        Assert.Null(result.FirstError);
+    }
+
+    [Fact]
+    public void FirstErrorMessage_WhenFailure_ShouldReturnFirstErrorMessage()
+    {
+        // Arrange
+        const string message = "First Error Message";
+        var result = Result.Failure("Code", message);
+
+        // Assert
+        Assert.Equal(message, result.FirstErrorMessage);
+    }
+
+    [Fact]
+    public void FirstErrorMessage_WhenSuccess_ShouldReturnNull()
+    {
+        // Act
+        var result = Result.Success();
+
+        // Assert
+        Assert.Null(result.FirstErrorMessage);
+    }
+
+    [Fact]
+    public void MatchWithSingleError_WhenFailure_ShouldExecuteOnFailureWithFirstError()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Validation("V.1", "Msg 1") };
+        var result = Result.Failure(errors);
+
+        // Act
+        var matched = result.Match(
+            () => "Success",
+            err => err.Code);
+
+        // Assert
+        Assert.Equal(errors[0].Code, matched);
+    }
+
+    [Fact]
+    public void MatchWithSingleErrorGeneric_WhenFailure_ShouldExecuteOnFailureWithFirstError()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Validation("V.1", "Msg 1") };
+        var result = Result.Failure<string>(errors);
+
+        // Act
+        var matched = result.Match(
+            data => data,
+            err => err.Code);
+
+        // Assert
+        Assert.Equal(errors[0].Code, matched);
+    }
+
+    [Fact]
+    public void FailureWithCodeMessageAndType_ShouldReturnResultWithCorrectType()
+    {
+        // Act
+        var result = Result.Failure("Code", "Message", ErrorType.NotFound);
+
+        // Assert
+        Assert.Equal(ErrorType.NotFound, result.FirstError!.Type);
+    }
+
+    [Fact]
+    public void FailureGenericWithCodeMessageAndType_ShouldReturnResultWithCorrectType()
+    {
+        // Act
+        var result = Result.Failure<string>("Code", "Message", ErrorType.Conflict);
+
+        // Assert
+        Assert.Equal(ErrorType.Conflict, result.FirstError!.Type);
+    }
+
+    [Fact]
+    public void Failure_WhenCalledWithMetadata_ShouldAssignMetadataToResult()
+    {
+        // Arrange
+        var metadata = new Dictionary<string, object> { { "Key", "Value" } };
+
+        // Act
+        var result = Result.Failure("Code", "Message", metadata);
+
+        // Assert
+        Assert.Equal(ErrorType.Failure, result.FirstError!.Type);
+        Assert.Equal("Value", result.Metadata!["Key"]);
     }
 }

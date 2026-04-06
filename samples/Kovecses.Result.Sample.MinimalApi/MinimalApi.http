@@ -21,7 +21,7 @@ GET {{Host}}/employees/1/name
 GET {{Host}}/employees/99/name
 
 ### 6. Create Employee - Success
-# Returns 201 Created with the new employee data
+# Returns 201 Created with the new employee data (ID will be 3)
 POST {{Host}}/employees
 Content-Type: application/json
 
@@ -31,13 +31,7 @@ Content-Type: application/json
 }
 
 ### 7. Create Employee - Validation Error (Direct Response)
-# Returns 400 Bad Request with ValidationProblemDetails (standard ASP.NET Core format)
-# Uses result.ToMinimalApiResult() - returns only the data or ProblemDetails
-# Example: fullName too short + position empty (demonstrates validation aggregation concept)
-# When using aggregated validation pattern with Error.Validation(code, message, metadata):
-# - Single error with code: "General.Validation"
-# - Metadata contains field-level messages as flat structure: {"FullName": ["msg"], "Position": ["msg"]}
-# - This keeps API responses clean and organized for client-side field-level error handling
+# Returns 400 Bad Request with ValidationProblemDetails
 POST {{Host}}/employees
 Content-Type: application/json
 
@@ -47,25 +41,7 @@ Content-Type: application/json
 }
 
 ### 8. Create Employee - Validation Error (Wrapped Result)
-# Returns 200 OK with full Result object including aggregated validation errors in metadata
-# Uses result.ToMinimalApiResult(includeResultInResponse: true)
-# Single validation error with metadata containing field-level messages
-# Response demonstrates flat metadata structure with property names as keys
-# Example response:
-# {
-#   "data": null,
-#   "errors": [
-#     {
-#       "code": "General.Validation",
-#       "message": "Validation failed.",
-#       "type": 2,
-#       "metadata": {
-#         "FullName": ["Name is too short."],
-#         "Position": ["Position is required."]
-#       }
-#     }
-#   ]
-# }
+# Returns 400 Bad Request with full Result object including aggregated validation errors in metadata
 POST {{Host}}/employees/validate-wrapped
 Content-Type: application/json
 
@@ -75,7 +51,7 @@ Content-Type: application/json
 }
 
 ### 9. Create Employee - Conflict Error
-# Returns 409 Conflict with standard ProblemDetails
+# Returns 409 Conflict with standard ProblemDetails (Boss already exists)
 POST {{Host}}/employees
 Content-Type: application/json
 
@@ -85,7 +61,7 @@ Content-Type: application/json
 }
 
 ### 10. Update Employee - Success (Async Chaining Demo)
-# Returns 200 OK with the updated EmployeeDto
+# Returns 200 OK with the updated EmployeeDto (Jane Smith -> Jane Senior)
 PUT {{Host}}/employees/2
 Content-Type: application/json
 
@@ -95,39 +71,60 @@ Content-Type: application/json
   "position": "Senior Product Manager"
 }
 
-### 11. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
-# Returns 400 Bad Request (ErrorType.Failure) with custom message and code
-DELETE {{Host}}/employees/1
+### 11. Get Employee Summary (Match Overload Demo)
+# Returns 200 OK with formatted string result using the new Match(Error err) overload
+GET {{Host}}/employees/1/summary
 
-### 12. Delete Employee - Success
-# Returns 204 No Content on success
-DELETE {{Host}}/employees/2
+### 12. Get Employee Summary - Not Found (FirstErrorMessage Demo)
+# Returns 404 Not Found
+# Demonstrates FirstErrorMessage property in the failure handler
+GET {{Host}}/employees/99/summary
 
 ### 13. Bulk Update Positions - Success (Result.Combine Demo)
 # Returns 204 No Content if all updates succeed
+# We update ID 2 and the newly created ID 3
 POST {{Host}}/employees/bulk-update
 Content-Type: application/json
 
 {
-  "ids": [1, 2],
+  "ids": [2, 3],
   "newPosition": "Executive Manager"
 }
 
-### 14. Bulk Update Positions - Mixed Failures (Collection Demo)
-# Returns 400 Bad Request (Conflict) with all errors in the extensions["errors"] collection
+### 14. Bulk Update Positions - Mixed Failures (JoinErrorMessages Demo)
+# Returns 404 Not Found because ID 999 doesn't exist
+# Demonstrates how the first error determines the status code (First Error Wins)
+# Triggering server-side logging with the new JoinErrorMessages extension
 POST {{Host}}/employees/bulk-update
 Content-Type: application/json
 
 {
   "ids": [1, 999],
+  "newPosition": "Senior Manager"
+}
+
+### 15. Bulk Update Positions - Business Rule Conflict (JoinErrorMessages Demo)
+# Returns 409 Conflict because we try to demote The Boss (ID 1) to Product Manager
+POST {{Host}}/employees/bulk-update
+Content-Type: application/json
+
+{
+  "ids": [1, 2],
   "newPosition": "Product Manager"
 }
 
-### 15. Get Employee Summary (MatchAsync Demo)
-# Returns 200 OK with formatted string result
-GET {{Host}}/employees/1/summary
+### 16. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
+# Returns 400 Bad Request (ErrorType.Failure)
+DELETE {{Host}}/employees/1
 
-### 16. System Health Check (Direct Error Mapping Demo)
-# Returns 500 Internal Server Error (Unexpected) directly from an Error object
+### 17. Delete Employee - Success (ID 2)
+# Returns 204 No Content
+DELETE {{Host}}/employees/2
+
+### 18. Delete Employee - Success (ID 3)
+# Returns 204 No Content
+DELETE {{Host}}/employees/3
+
+### 19. System Health Check (Direct Error Mapping Demo)
+# Returns 500 Internal Server Error directly from an Error object
 GET {{Host}}/health
-

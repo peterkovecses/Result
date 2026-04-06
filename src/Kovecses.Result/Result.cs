@@ -32,6 +32,18 @@ public class Result
     public bool IsFailure => !IsSuccess;
 
     /// <summary>
+    /// Gets the first error associated with the failure, or null if the operation was successful.
+    /// </summary>
+    [JsonIgnore]
+    public Error? FirstError => Errors?.FirstOrDefault();
+
+    /// <summary>
+    /// Gets the message of the first error, or null if the operation was successful.
+    /// </summary>
+    [JsonIgnore]
+    public string? FirstErrorMessage => FirstError?.Message;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Result"/> class.
     /// </summary>
     /// <param name="errors">The errors if the operation failed, otherwise null.</param>
@@ -96,6 +108,17 @@ public class Result
         => Failure(new Error(code, message, ErrorType.Failure), metadata);
 
     /// <summary>
+    /// Creates a failed result from a code, message and type.
+    /// </summary>
+    /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
+    /// <param name="type">The error type.</param>
+    /// <param name="metadata">Optional metadata.</param>
+    /// <returns>A failed <see cref="Result"/>.</returns>
+    public static Result Failure(string code, string message, ErrorType type, Dictionary<string, object>? metadata = null)
+        => Failure(new Error(code, message, type), metadata);
+
+    /// <summary>
     /// Creates a failed result from a collection of errors.
     /// </summary>
     /// <param name="errors">The collection of errors.</param>
@@ -124,6 +147,18 @@ public class Result
     /// <returns>A failed <see cref="Result{TData}"/>.</returns>
     public static Result<TData> Failure<TData>(string code, string message, Dictionary<string, object>? metadata = null)
         => Failure<TData>(new Error(code, message, ErrorType.Failure), metadata);
+
+    /// <summary>
+    /// Creates a failed result with data from a code, message and type.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
+    /// <param name="type">The error type.</param>
+    /// <param name="metadata">Optional metadata.</param>
+    /// <returns>A failed <see cref="Result{TData}"/>.</returns>
+    public static Result<TData> Failure<TData>(string code, string message, ErrorType type, Dictionary<string, object>? metadata = null)
+        => Failure<TData>(new Error(code, message, type), metadata);
 
     /// <summary>
     /// Creates a failed result with data from a collection of errors.
@@ -173,7 +208,21 @@ public class Result
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>The result of the executed function.</returns>
     public TResult Match<TResult>(Func<TResult> onSuccess, Func<Error[], TResult> onFailure)
-        => IsSuccess ? onSuccess() : onFailure(Errors!);
+        => IsSuccess 
+            ? onSuccess() 
+            : onFailure(Errors!);
+
+    /// <summary>
+    /// Executes the onSuccess function if the result is successful, otherwise executes the onFailure function with the first error.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">The function to execute on failure with the first error.</param>
+    /// <returns>The result of the executed function.</returns>
+    public TResult Match<TResult>(Func<TResult> onSuccess, Func<Error, TResult> onFailure)
+        => IsSuccess 
+            ? onSuccess() 
+            : onFailure(FirstError!);
 
     /// <summary>
     /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
@@ -183,7 +232,9 @@ public class Result
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
     public Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<Error[], Task<TResult>> onFailure)
-        => IsSuccess ? onSuccess() : onFailure(Errors!);
+        => IsSuccess 
+            ? onSuccess() 
+            : onFailure(Errors!);
 
     /// <summary>
     /// Chains another operation if the current result is successful.
@@ -191,7 +242,9 @@ public class Result
     /// <param name="next">The next operation to execute.</param>
     /// <returns>The result of the next operation, or the current failure.</returns>
     public Result Bind(Func<Result> next)
-        => IsSuccess ? next() : this;
+        => IsSuccess 
+            ? next() 
+            : this;
 
     /// <summary>
     /// Asynchronously chains another operation if the current result is successful.
@@ -199,7 +252,9 @@ public class Result
     /// <param name="next">The next operation to execute.</param>
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
     public Task<Result> BindAsync(Func<Task<Result>> next)
-        => IsSuccess ? next() : Task.FromResult(this);
+        => IsSuccess 
+            ? next() 
+            : Task.FromResult(this);
 
     /// <summary>
     /// Executes an action if the result is successful.
@@ -209,6 +264,7 @@ public class Result
     public Result Tap(Action action)
     {
         if (IsSuccess) action();
+        
         return this;
     }
 
@@ -220,6 +276,7 @@ public class Result
     public async Task<Result> TapAsync(Func<Task> func)
     {
         if (IsSuccess) await func();
+        
         return this;
     }
 
@@ -352,7 +409,21 @@ public class Result<TData> : Result
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>The result of the executed function.</returns>
     public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<Error[], TResult> onFailure)
-        => IsSuccess ? onSuccess(Data!) : onFailure(Errors!);
+        => IsSuccess 
+            ? onSuccess(Data!) 
+            : onFailure(Errors!);
+
+    /// <summary>
+    /// Executes the onSuccess function if the result is successful, otherwise executes the onFailure function with the first error.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">The function to execute on failure with the first error.</param>
+    /// <returns>The result of the executed function.</returns>
+    public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<Error, TResult> onFailure)
+        => IsSuccess 
+            ? onSuccess(Data!) 
+            : onFailure(FirstError!);
 
     /// <summary>
     /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function.
@@ -362,7 +433,9 @@ public class Result<TData> : Result
     /// <param name="onFailure">The function to execute on failure with the collection of errors.</param>
     /// <returns>A task representing the result of the executed function.</returns>
     public Task<TResult> MatchAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<Error[], Task<TResult>> onFailure)
-        => IsSuccess ? onSuccess(Data!) : onFailure(Errors!);
+        => IsSuccess 
+            ? onSuccess(Data!) 
+            : onFailure(Errors!);
 
     /// <summary>
     /// Transforms the success value of the result.
@@ -371,7 +444,9 @@ public class Result<TData> : Result
     /// <param name="map">The mapping function.</param>
     /// <returns>A new result with the transformed data, or the current failure.</returns>
     public Result<TNewData> Map<TNewData>(Func<TData, TNewData> map)
-        => IsSuccess ? Success(map(Data!)) : Failure<TNewData>(Errors!);
+        => IsSuccess 
+            ? Success(map(Data!)) 
+            : Failure<TNewData>(Errors!);
 
     /// <summary>
     /// Asynchronously transforms the success value of the result.
@@ -380,7 +455,9 @@ public class Result<TData> : Result
     /// <param name="map">The asynchronous mapping function.</param>
     /// <returns>A task representing the new result with the transformed data, or the current failure.</returns>
     public async Task<Result<TNewData>> MapAsync<TNewData>(Func<TData, Task<TNewData>> map)
-        => IsSuccess ? Success(await map(Data!)) : Failure<TNewData>(Errors!);
+        => IsSuccess 
+            ? Success(await map(Data!)) 
+            : Failure<TNewData>(Errors!);
 
     /// <summary>
     /// Chains another result-returning operation if the current result is successful.
@@ -389,7 +466,9 @@ public class Result<TData> : Result
     /// <param name="next">The next operation to execute.</param>
     /// <returns>The result of the next operation, or the current failure.</returns>
     public Result<TNewData> Bind<TNewData>(Func<TData, Result<TNewData>> next)
-        => IsSuccess ? next(Data!) : Failure<TNewData>(Errors!);
+        => IsSuccess 
+            ? next(Data!) 
+            : Failure<TNewData>(Errors!);
 
     /// <summary>
     /// Asynchronously chains another result-returning operation if the current result is successful.
@@ -398,7 +477,9 @@ public class Result<TData> : Result
     /// <param name="next">The next asynchronous operation to execute.</param>
     /// <returns>A task representing the result of the next operation, or the current failure.</returns>
     public Task<Result<TNewData>> BindAsync<TNewData>(Func<TData, Task<Result<TNewData>>> next)
-        => IsSuccess ? next(Data!) : Task.FromResult(Failure<TNewData>(Errors!));
+        => IsSuccess 
+            ? next(Data!) 
+            : Task.FromResult(Failure<TNewData>(Errors!));
 
     /// <summary>
     /// Executes an action with the data if the result is successful.
@@ -408,6 +489,7 @@ public class Result<TData> : Result
     public Result<TData> Tap(Action<TData> action)
     {
         if (IsSuccess) action(Data!);
+
         return this;
     }
 
@@ -419,6 +501,7 @@ public class Result<TData> : Result
     public async Task<Result<TData>> TapAsync(Func<TData, Task> func)
     {
         if (IsSuccess) await func(Data!);
+        
         return this;
     }
 
@@ -484,10 +567,14 @@ internal static class JsonConverterHelper
     public static List<Error>? DeserializeErrors(JsonElement root, JsonSerializerOptions options)
     {
         if (!TryGetProperty(root, "Errors", options, out var element))
+        {
             return null;
+        }
 
         if (element.ValueKind != JsonValueKind.Array)
+        {
             return null;
+        }
 
         return JsonSerializer.Deserialize<List<Error>>(element.GetRawText(), GetCaseInsensitiveOptions(options));
     }
@@ -495,10 +582,14 @@ internal static class JsonConverterHelper
     public static Dictionary<string, object>? DeserializeMetadata(JsonElement root, JsonSerializerOptions options)
     {
         if (!TryGetProperty(root, "Metadata", options, out var element))
+        {
             return null;
+        }
 
         if (element.ValueKind != JsonValueKind.Object)
+        {
             return null;
+        }
 
         return DeserializeObjectToDictionary(element);
     }
@@ -508,18 +599,22 @@ internal static class JsonConverterHelper
         var transformedName = options.PropertyNamingPolicy?.ConvertName(propertyName) ?? propertyName;
 
         if (root.TryGetProperty(transformedName, out element))
+        {
             return true;
+        }
 
         foreach (var property in root.EnumerateObject())
         {
             if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
             {
                 element = property.Value;
+
                 return true;
             }
         }
 
         element = default;
+        
         return false;
     }
 
@@ -529,7 +624,9 @@ internal static class JsonConverterHelper
     public static JsonSerializerOptions GetCaseInsensitiveOptions(JsonSerializerOptions options)
     {
         if (options.PropertyNameCaseInsensitive)
+        {
             return options;
+        }
 
         return new JsonSerializerOptions(options) { PropertyNameCaseInsensitive = true };
     }
@@ -543,7 +640,9 @@ internal static class JsonConverterHelper
             result[property.Name] = DeserializeValue(property.Value);
         }
 
-        return result.Count > 0 ? result : null;
+        return result.Count > 0 
+            ? result 
+            : null;
     }
 
     public static object DeserializeValue(JsonElement element) => element.ValueKind switch

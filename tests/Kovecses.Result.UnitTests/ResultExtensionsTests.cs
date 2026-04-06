@@ -284,4 +284,32 @@ public class ResultExtensionsTests
         Assert.False(executed);
         result.Should().BeFailure();
     }
+
+    [Fact]
+    public void JoinErrorMessages_WhenFailure_ShouldJoinMessagesWithSeparator()
+    {
+        // Arrange
+        var errors = new[]
+        {
+            Error.Validation("V.1", "Message 1"),
+            Error.Validation("V.2", "Message 2")
+        };
+        var result = Result.Failure(errors);
+
+        // Act
+        var message = result.JoinErrorMessages(" | ");
+
+        // Assert
+        Assert.Equal("Message 1 | Message 2", message);
+    }
+
+    [Fact]
+    public void JoinErrorMessages_WhenSuccess_ShouldReturnEmptyString()
+    {
+        // Act
+        var result = Result.Success();
+
+        // Assert
+        Assert.Empty(result.JoinErrorMessages());
+    }
 }

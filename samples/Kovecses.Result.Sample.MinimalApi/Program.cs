@@ -36,7 +36,7 @@ employeesGroup.MapPost("/", async (CreateEmployeeCommand command, IMediator medi
 
     return result.Match(
         data => Results.Created($"/employees/{data.Id}", data),
-        _ => result.ToMinimalApiResult());
+        (Error _) => result.ToMinimalApiResult());
 });
 
 // 4. Put - Standard REST (Async Chaining example)
@@ -61,10 +61,17 @@ employeesGroup.MapDelete("/{id:int}", async (int id, IMediator mediator, Cancell
     return result.ToMinimalApiResult();
 });
 
-// 6. Post - Bulk Update (demonstrates Result.Combine)
+// 6. Post - Bulk Update (demonstrates Result.Combine and JoinErrorMessages)
 employeesGroup.MapPost("/bulk-update", async (BulkUpdatePositionCommand command, IMediator mediator, CancellationToken ct) =>
 {
     var result = await mediator.SendAsync(command, ct);
+
+    if (result.IsFailure)
+    {
+        // Demonstrating JoinErrorMessages to log or return all errors in a single string
+        var allErrors = result.JoinErrorMessages(" | ");
+        app.Logger.LogWarning("Bulk update failed: {Errors}", allErrors);
+    }
 
     return result.ToMinimalApiResult();
 });

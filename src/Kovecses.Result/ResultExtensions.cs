@@ -299,4 +299,17 @@ public static class ResultExtensions
             ? result
             : Result.Failure<TData>(error);
     }
+
+    /// <summary>
+    /// Joins the error messages of the result into a single string.
+    /// </summary>
+    /// <param name="result">The result containing errors.</param>
+    /// <param name="separator">The separator to use between error messages.</param>
+    /// <returns>A string containing all error messages joined by the separator, or an empty string if there are no errors.</returns>
+    public static string JoinErrorMessages(this Result result, string separator = "; ")
+    {
+        return result.Errors == null 
+            ? string.Empty 
+            : string.Join(separator, result.Errors.Select(e => e.Message));
+    }
 }

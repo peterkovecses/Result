@@ -19,6 +19,7 @@ If you find this library useful, please give it a **star** on GitHub! It helps m
 2. [Installation](#installation)
 3. [Core Library (Kovecses.Result)](#2-core-library-kovecsesresult)
     - [Basic Usage](#basic-usage)
+    - [Accessing Error Details](#accessing-error-details)
     - [Functional Extensions](#functional-extensions-railway-oriented-programming)
     - [Async Chaining](#async-chaining-task-extensions)
     - [Error Aggregation (Combine)](#error-aggregation-combine)
@@ -69,11 +70,26 @@ The library supports powerful implicit conversions to reduce boilerplate, includ
 ```csharp
 // Success (with or without data)
 public Result Create() => Result.Success();
-public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer"); // Implicit data conversion
+public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer"); // Implicit conversion
 
 // Failure (Single Error)
-public Result<Employee> Get(int id) => Error.NotFound($"Employee {id} not found."); // Implicit error conversion
+public Result<Employee> Get(int id) => Error.NotFound($"Employee {id} not found."); // Implicit conversion
 
+// Failure (Custom code and message - defaults to ErrorType.Failure / HTTP 400)
+public Result Process() => Result.Failure("Order.InvalidState", "The order cannot be modified in its current state.");
+
+// Failure (With explicit type - e.g. Conflict -> HTTP 409)
+public Result Create() => Result.Failure("User.Exists", "User already registered.", ErrorType.Conflict);
+
+// Failure with data and explicit type (e.g. NotFound -> HTTP 404)
+public Result<User> GetUser(int id) 
+    => Result.Failure<User>("User.NotFound", $"User {id} not found.", ErrorType.NotFound);
+```
+
+#### Multiple Errors
+The library natively supports returning multiple errors at once.
+
+```csharp
 // Failure (Multiple Errors using Collection Expressions - C# 12)
 public Result Validate(User user) => [
     Error.Validation("Email", "Email is required."),
@@ -93,14 +109,33 @@ public Result<Employee> RegisterEmployee(RegisterRequest request) {
 }
 ```
 
+### Accessing Error Details
+When an operation fails, you can easily inspect the results:
+
+```csharp
+var result = Get(123);
+if (result.IsFailure) 
+{
+    Error? first = result.FirstError;            // The primary Error object
+    Error[]? all = result.Errors;                // All Error objects
+    string? msg = result.FirstErrorMessage;      // Message of the primary error
+    string summary = result.JoinErrorMessages(); // All messages joined: "Msg 1; Msg 2"
+}
+```
+
 ### Functional Extensions (Railway-Oriented Programming)
 Reduce nested `if` statements and build declarative pipelines.
 
 ```csharp
-// Match: Execute different paths based on state
+// Match: Execute different paths based on state (supports both single error and error array)
 return result.Match(
     data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
-    errors => result.ToActionResult()
+    (Error err) => result.ToActionResult() // Single error (most common)
+);
+
+return result.Match(
+    data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
+    (Error[] errors) => result.ToActionResult() // All errors
 );
 
 // Map: Transform success data

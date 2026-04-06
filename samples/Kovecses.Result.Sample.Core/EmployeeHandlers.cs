@@ -131,18 +131,6 @@ public sealed class EmployeeHandlers :
         return Result.Combine(results);
     }
 
-    public async Task<Result<string>> HandleAsync(GetEmployeeSummaryQuery request, CancellationToken cancellationToken)
-    {
-        // Demonstration of MatchAsync:
-        // Transforming a Result<Employee> into a Result<string> with a custom format.
-        var result = await GetByIdAsync(request.Id);
-
-        return await result.MatchAsync<Result<string>>(
-            onSuccess: employee => Task.FromResult<Result<string>>($"{employee.FullName} works as {employee.Position}."),
-            onFailure: errors => Task.FromResult<Result<string>>(Result.Failure<string>(errors))
-        );
-    }
-
     private async Task<Result> UpdateSinglePositionAsync(int id, string newPosition)
     {
         var result = await GetByIdAsync(id);
@@ -150,6 +138,12 @@ public sealed class EmployeeHandlers :
         if (result.IsFailure)
         {
             return Result.Failure(result.Errors!);
+        }
+
+        var validationResult = await ValidatePositionAsync(result.Data!, newPosition);
+        if (validationResult.IsFailure)
+        {
+            return Result.Failure(validationResult.Errors!);
         }
 
         var employee = result.Data!;
@@ -199,5 +193,16 @@ public sealed class EmployeeHandlers :
         Employees.Remove(employee);
 
         return Task.FromResult(Result.Success());
+    }
+
+    public async Task<Result<string>> HandleAsync(GetEmployeeSummaryQuery request, CancellationToken cancellationToken)
+    {
+        var result = await GetByIdAsync(request.Id);
+
+        // Demonstrating the new Match overload that takes a single Error
+        // and using the new Failure overload to wrap the error while preserving its Type (e.g. NotFound stays 404).
+        return result.Match(
+            employee => $"Employee {employee.FullName} works as {employee.Position}.",
+            err => Result.Failure<string>(err.Code, $"Could not get summary: {result.FirstErrorMessage}", err.Type));
     }
 }

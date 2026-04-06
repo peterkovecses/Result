@@ -30,7 +30,7 @@ public class EmployeesController(IMediator mediator) : ControllerBase
 
         return result.Match(
             data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
-            _ => result.ToActionResult());
+            (Error _) => result.ToActionResult());
     }
 
     // 4. Put - Standard REST (Returns DTO and custom headers from Metadata)
