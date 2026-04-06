@@ -187,7 +187,7 @@ public static class UserErrorCodes {
 public static class UserErrors {
     public static Error Disabled(int id) => Error.Disabled("User is disabled.", UserErrorCodes.Disabled);
 }
-```
+
 // Attach Success Metadata
 var metadata = new Dictionary<string, object> { { "TraceId", "abc-123" } };
 return Result.Success(data, metadata);
