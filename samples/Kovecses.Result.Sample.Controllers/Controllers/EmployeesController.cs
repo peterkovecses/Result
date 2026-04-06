@@ -22,15 +22,41 @@ public class EmployeesController(IMediator mediator) : ControllerBase
         return result.ToActionResult(includeResultInResponse: true);
     }
 
-    // 3. Post - Standard REST (Validation/Conflict demo)
+    // 2b. Get - Match with all errors (Error[] variant)
+    [HttpGet("{id:int}/with-all-errors")]
+    public async Task<IActionResult> GetWithAllErrors(int id, CancellationToken ct)
+    {
+        var result = await mediator.SendAsync(new GetEmployeeQuery(id), ct);
+
+        return result.Match<IActionResult>(
+            Ok,
+            errors => BadRequest(new 
+            { 
+                message = "One or more errors occurred",
+                errors = errors.Select(e => new { e.Code, e.Message }) 
+            }));
+    }
+
+    // 3. Post - MatchFirst variant (first error only)
     [HttpPost]
     public async Task<IActionResult> Create(CreateEmployeeCommand command, CancellationToken ct)
     {
         var result = await mediator.SendAsync(command, ct);
 
+        return result.MatchFirst(
+            data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
+            error => result.ToActionResult());
+    }
+
+    // 3b. Post - Match discard variant (ignore error details)
+    [HttpPost("simple")]
+    public async Task<IActionResult> CreateSimple(CreateEmployeeCommand command, CancellationToken ct)
+    {
+        var result = await mediator.SendAsync(command, ct);
+
         return result.Match(
             data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
-            (Error _) => result.ToActionResult());
+            _ => StatusCode(StatusCodes.Status400BadRequest, "Failed to create employee"));
     }
 
     // 4. Put - Standard REST (Returns DTO and custom headers from Metadata)

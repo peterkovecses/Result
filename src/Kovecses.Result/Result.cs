@@ -219,7 +219,7 @@ public class Result
     /// <param name="onSuccess">The function to execute on success.</param>
     /// <param name="onFailure">The function to execute on failure with the first error.</param>
     /// <returns>The result of the executed function.</returns>
-    public TResult Match<TResult>(Func<TResult> onSuccess, Func<Error, TResult> onFailure)
+    public TResult MatchFirst<TResult>(Func<TResult> onSuccess, Func<Error, TResult> onFailure)
         => IsSuccess 
             ? onSuccess() 
             : onFailure(FirstError!);
@@ -235,6 +235,18 @@ public class Result
         => IsSuccess 
             ? onSuccess() 
             : onFailure(Errors!);
+
+    /// <summary>
+    /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function with the first error.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">The function to execute on failure with the first error.</param>
+    /// <returns>A task representing the result of the executed function.</returns>
+    public Task<TResult> MatchFirstAsync<TResult>(Func<Task<TResult>> onSuccess, Func<Error, Task<TResult>> onFailure)
+        => IsSuccess 
+            ? onSuccess() 
+            : onFailure(FirstError!);
 
     /// <summary>
     /// Chains another operation if the current result is successful.
@@ -420,7 +432,7 @@ public class Result<TData> : Result
     /// <param name="onSuccess">The function to execute on success with the data.</param>
     /// <param name="onFailure">The function to execute on failure with the first error.</param>
     /// <returns>The result of the executed function.</returns>
-    public TResult Match<TResult>(Func<TData, TResult> onSuccess, Func<Error, TResult> onFailure)
+    public TResult MatchFirst<TResult>(Func<TData, TResult> onSuccess, Func<Error, TResult> onFailure)
         => IsSuccess 
             ? onSuccess(Data!) 
             : onFailure(FirstError!);
@@ -436,6 +448,18 @@ public class Result<TData> : Result
         => IsSuccess 
             ? onSuccess(Data!) 
             : onFailure(Errors!);
+
+    /// <summary>
+    /// Asynchronously executes the onSuccess function if the result is successful, otherwise executes the onFailure function with the first error.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after matching.</typeparam>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">The function to execute on failure with the first error.</param>
+    /// <returns>A task representing the result of the executed function.</returns>
+    public Task<TResult> MatchFirstAsync<TResult>(Func<TData, Task<TResult>> onSuccess, Func<Error, Task<TResult>> onFailure)
+        => IsSuccess 
+            ? onSuccess(Data!) 
+            : onFailure(FirstError!);
 
     /// <summary>
     /// Transforms the success value of the result.

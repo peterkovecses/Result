@@ -127,16 +127,26 @@ if (result.IsFailure)
 Reduce nested `if` statements and build declarative pipelines.
 
 ```csharp
-// Match: Execute different paths based on state (supports both single error and error array)
-return result.Match(
-    data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
-    (Error err) => result.ToActionResult() // Single error (most common)
-);
+// Match: Execute different paths based on state
 
+// 1. Match and discard - ignore error details
 return result.Match(
-    data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
-    (Error[] errors) => result.ToActionResult() // All errors
-);
+    data => Results.Created($"/employees/{data.Id}", data),
+    _ => Results.StatusCode(StatusCodes.Status400BadRequest));
+
+// 2. MatchFirst - use only the first error
+return result.MatchFirst(
+    data => Results.Created($"/employees/{data.Id}", data),
+    error => result.ToMinimalApiResult());
+
+// 3. Match with Error[] - use all errors
+return result.Match(
+    data => Results.Created($"/employees/{data.Id}", data),
+    errors => Results.BadRequest(new 
+    { 
+        message = "One or more errors occurred",
+        errors = errors.Select(e => new { e.Code, e.Message }) 
+    }));
 
 // Map: Transform success data
 Result<UserDto> dto = result.Map(u => new UserDto(u.Id, u.Name));

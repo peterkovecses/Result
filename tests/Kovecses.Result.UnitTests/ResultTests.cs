@@ -865,32 +865,32 @@ public class ResultTests
     }
 
     [Fact]
-    public void MatchWithSingleError_WhenFailure_ShouldExecuteOnFailureWithFirstError()
+    public void MatchFirst_WhenFailure_ShouldExecuteOnFailureWithFirstError()
     {
         // Arrange
         var errors = new[] { Error.NotFound(), Error.Validation("V.1", "Msg 1") };
         var result = Result.Failure(errors);
 
         // Act
-        var matched = result.Match(
+        var matched = result.MatchFirst(
             () => "Success",
-            err => err.Code);
+            error => error.Code);
 
         // Assert
         Assert.Equal(errors[0].Code, matched);
     }
 
     [Fact]
-    public void MatchWithSingleErrorGeneric_WhenFailure_ShouldExecuteOnFailureWithFirstError()
+    public void MatchFirstGeneric_WhenFailure_ShouldExecuteOnFailureWithFirstError()
     {
         // Arrange
         var errors = new[] { Error.NotFound(), Error.Validation("V.1", "Msg 1") };
         var result = Result.Failure<string>(errors);
 
         // Act
-        var matched = result.Match(
+        var matched = result.MatchFirst(
             data => data,
-            err => err.Code);
+            error => error.Code);
 
         // Assert
         Assert.Equal(errors[0].Code, matched);
@@ -928,5 +928,67 @@ public class ResultTests
         // Assert
         Assert.Equal(ErrorType.Failure, result.FirstError!.Type);
         Assert.Equal("Value", result.Metadata!["Key"]);
+    }
+
+    [Fact]
+    public async Task MatchFirstAsync_WhenSuccess_ShouldExecuteOnSuccess()
+    {
+        // Arrange
+        var result = Result.Success();
+
+        // Act
+        var output = await result.MatchFirstAsync(
+            () => Task.FromResult("Success"),
+            error => Task.FromResult("Failure"));
+
+        // Assert
+        Assert.Equal("Success", output);
+    }
+
+    [Fact]
+    public async Task MatchFirstAsync_WhenFailure_ShouldExecuteOnFailureWithFirstError()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Validation("V.1", "Msg 1") };
+        var result = Result.Failure(errors);
+
+        // Act
+        var output = await result.MatchFirstAsync(
+            () => Task.FromResult("Success"),
+            error => Task.FromResult(error.Code));
+
+        // Assert
+        Assert.Equal(errors[0].Code, output);
+    }
+
+    [Fact]
+    public async Task MatchFirstAsyncGeneric_WhenSuccess_ShouldExecuteOnSuccessWithData()
+    {
+        // Arrange
+        var result = Result.Success("AsyncTestData");
+
+        // Act
+        var output = await result.MatchFirstAsync(
+            data => Task.FromResult(data),
+            error => Task.FromResult("Failure"));
+
+        // Assert
+        Assert.Equal("AsyncTestData", output);
+    }
+
+    [Fact]
+    public async Task MatchFirstAsyncGeneric_WhenFailure_ShouldExecuteOnFailureWithFirstError()
+    {
+        // Arrange
+        var errors = new[] { Error.Conflict(), Error.Validation("V.1", "Msg 1") };
+        var result = Result.Failure<string>(errors);
+
+        // Act
+        var output = await result.MatchFirstAsync(
+            data => Task.FromResult(data),
+            error => Task.FromResult(error.Code));
+
+        // Assert
+        Assert.Equal(errors[0].Code, output);
     }
 }

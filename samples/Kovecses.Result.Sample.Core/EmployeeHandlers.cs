@@ -162,7 +162,7 @@ public sealed class EmployeeHandlers :
             : Result.Success(employee));
     }
 
-    private Task<Result<Employee>> ValidatePositionAsync(Employee employee, string newPosition)
+    private static Task<Result<Employee>> ValidatePositionAsync(Employee employee, string newPosition)
     {
         // Business Rule: Cannot demote the Boss to a PM
         if (employee.Id == 1 && newPosition == "Product Manager")
@@ -195,14 +195,33 @@ public sealed class EmployeeHandlers :
         return Task.FromResult(Result.Success());
     }
 
+    // Example 1: MatchFirst - handle the first error
     public async Task<Result<string>> HandleAsync(GetEmployeeSummaryQuery request, CancellationToken cancellationToken)
     {
         var result = await GetByIdAsync(request.Id);
 
-        // Demonstrating the new Match overload that takes a single Error
-        // and using the new Failure overload to wrap the error while preserving its Type (e.g. NotFound stays 404).
+        return result.MatchFirst(
+            employee => $"Employee {employee.FullName} works as {employee.Position}.",
+            error => Result.Failure<string>(error.Code, $"Could not get summary: {result.FirstErrorMessage}", error.Type));
+    }
+
+    // Example 2: Match with Error[] - handle all errors
+    public async Task<Result<string>> GetEmployeeSummaryWithAllErrorsAsync(int id, CancellationToken cancellationToken)
+    {
+        var result = await GetByIdAsync(id);
+
         return result.Match(
             employee => $"Employee {employee.FullName} works as {employee.Position}.",
-            err => Result.Failure<string>(err.Code, $"Could not get summary: {result.FirstErrorMessage}", err.Type));
+            errors => Result.Failure<string>(Error.NotFound(result.JoinErrorMessages(", "))));
+    }
+
+    // Example 3: Match discard - ignore error details
+    public async Task<Result<string>> GetEmployeeSummarySimpleAsync(int id, CancellationToken cancellationToken)
+    {
+        var result = await GetByIdAsync(id);
+
+        return result.Match(
+            employee => $"Employee {employee.FullName} works as {employee.Position}.",
+            _ => Result.Failure<string>(Error.NotFound("Could not retrieve employee summary")));
     }
 }

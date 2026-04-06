@@ -29,14 +29,38 @@ employeesGroup.MapGet("/{id:int}/wrapped", async (int id, IMediator mediator, Ca
     return result.ToMinimalApiResult(includeResultInResponse: true);
 });
 
-// 3. Post - Standard REST (Validation/Conflict demo)
+// 3. Post - MatchFirst variant (first error)
 employeesGroup.MapPost("/", async (CreateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
+{
+    var result = await mediator.SendAsync(command, ct);
+
+    return result.MatchFirst(
+        data => Results.Created($"/employees/{data.Id}", data),
+        error => result.ToMinimalApiResult());
+});
+
+// 3b. Post - Match discard variant (ignore error details)
+employeesGroup.MapPost("/simple", async (CreateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
 {
     var result = await mediator.SendAsync(command, ct);
 
     return result.Match(
         data => Results.Created($"/employees/{data.Id}", data),
-        (Error _) => result.ToMinimalApiResult());
+        _ => Results.StatusCode(StatusCodes.Status400BadRequest));
+});
+
+// 3c. Post - Match with Error[] variant (all errors)
+employeesGroup.MapPost("/validate", async (CreateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
+{
+    var result = await mediator.SendAsync(command, ct);
+
+    return result.Match(
+        data => Results.Created($"/employees/{data.Id}", data),
+        errors => Results.BadRequest(new 
+        { 
+            message = "One or more errors occurred",
+            errors = errors.Select(e => new { e.Code, e.Message }) 
+        }));
 });
 
 // 4. Put - Standard REST (Async Chaining example)

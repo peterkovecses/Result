@@ -1,3 +1,10 @@
+# Release Notes - Kovecses.Result 2.8.0
+
+## ⚠️ Breaking Change: Match Overload Renamed to MatchFirst
+To resolve type inference ambiguity the `Match` overload that accepts a single `Error` has been renamed to **`MatchFirst`** (and `MatchFirstAsync`).
+
+---
+
 # Release Notes - Kovecses.Result 2.7.0
 
 ## New Features
