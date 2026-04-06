@@ -178,11 +178,16 @@ if (result.IsFailure) {
 Define domain-specific errors and attach extra context to any result.
 
 ```csharp
-// Define extensions for Error class
-public static class UserErrors {
-    public static Error Disabled(int id) => Error.Failure("User is disabled.", "User.Disabled");
+// 1. Define constants for your business error codes
+public static class UserErrorCodes {
+    public const string Disabled = "User.Disabled";
 }
 
+// 2. Create a factory for domain-specific Error objects
+public static class UserErrors {
+    public static Error Disabled(int id) => Error.Disabled("User is disabled.", UserErrorCodes.Disabled);
+}
+```
 // Attach Success Metadata
 var metadata = new Dictionary<string, object> { { "TraceId", "abc-123" } };
 return Result.Success(data, metadata);
