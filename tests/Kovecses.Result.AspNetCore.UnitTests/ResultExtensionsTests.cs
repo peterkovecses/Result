@@ -435,4 +435,98 @@ public class ResultExtensionsTests
     }
 
     #endregion
+
+    #region ToMinimalApiResultAsync
+
+    [Fact]
+    public async Task ToMinimalApiResultAsync_WhenSuccess_ShouldReturnNoContent()
+    {
+        // Arrange
+        var resultTask = Task.FromResult(Result.Success());
+
+        // Act
+        var apiResult = await resultTask.ToMinimalApiResultAsync();
+
+        // Assert
+        apiResult.ShouldBeOfType<NoContent>();
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResultAsync_WhenSuccessWithData_ShouldReturnOkWithData()
+    {
+        // Arrange
+        const string data = "TestData";
+        var resultTask = Task.FromResult(Result.Success(data));
+
+        // Act
+        var apiResult = await resultTask.ToMinimalApiResultAsync();
+
+        // Assert
+        var okResult = apiResult.ShouldBeOfType<Ok<string>>();
+        okResult.Value.ShouldBe(data);
+    }
+
+    [Fact]
+    public async Task ToMinimalApiResultAsync_WhenFailure_ShouldReturnProblem()
+    {
+        // Arrange
+        var error = Error.NotFound("Resource not found");
+        var resultTask = Task.FromResult(Result.Failure(error));
+
+        // Act
+        var apiResult = await resultTask.ToMinimalApiResultAsync();
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+    }
+
+    #endregion
+
+    #region ToActionResultAsync
+
+    [Fact]
+    public async Task ToActionResultAsync_WhenSuccess_ShouldReturnNoContent()
+    {
+        // Arrange
+        var resultTask = Task.FromResult(Result.Success());
+
+        // Act
+        var actionResult = await resultTask.ToActionResultAsync();
+
+        // Assert
+        actionResult.ShouldBeOfType<NoContentResult>();
+    }
+
+    [Fact]
+    public async Task ToActionResultAsync_WhenSuccessWithData_ShouldReturnOkWithData()
+    {
+        // Arrange
+        const int data = 123;
+        var resultTask = Task.FromResult(Result.Success(data));
+
+        // Act
+        var actionResult = await resultTask.ToActionResultAsync();
+
+        // Assert
+        var okResult = actionResult.ShouldBeOfType<OkObjectResult>();
+        okResult.Value.ShouldBe(data);
+    }
+
+    [Fact]
+    public async Task ToActionResultAsync_WhenFailure_ShouldReturnProblemDetails()
+    {
+        // Arrange
+        var error = Error.NotFound("Resource not found");
+        var resultTask = Task.FromResult(Result.Failure(error));
+
+        // Act
+        var actionResult = await resultTask.ToActionResultAsync();
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+    }
+
+    #endregion
 }

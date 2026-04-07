@@ -7,9 +7,8 @@ var employeesGroup = app.MapGroup("/employees").WithTags("Employees");
 // 1. Get - Standard REST (returns data or ProblemDetails)
 employeesGroup.MapGet("/{id:int}", async (int id, IMediator mediator, CancellationToken ct) =>
 {
-    var result = await mediator.SendAsync(new GetEmployeeQuery(id), ct);
-    
-    return result.ToMinimalApiResult();
+    return await mediator.SendAsync(new GetEmployeeQuery(id), ct)
+        .ToMinimalApiResultAsync();
 });
 
 // 1. Get - ValueOrDefault demo
@@ -24,9 +23,8 @@ employeesGroup.MapGet("/{id:int}/name", async (int id, IMediator mediator, Cance
 // 2. Get - Wrapped (returns full Result object)
 employeesGroup.MapGet("/{id:int}/wrapped", async (int id, IMediator mediator, CancellationToken ct) =>
 {
-    var result = await mediator.SendAsync(new GetEmployeeQuery(id), ct);
-
-    return result.ToMinimalApiResult(includeResultInResponse: true);
+    return await mediator.SendAsync(new GetEmployeeQuery(id), ct)
+        .ToMinimalApiResultAsync(includeResultInResponse: true);
 });
 
 // 3. Post - MatchFirst variant (first error)
@@ -80,9 +78,8 @@ employeesGroup.MapPut("/{id:int}", async (int id, UpdateEmployeeCommand command,
 // 5. Delete - Standard REST
 employeesGroup.MapDelete("/{id:int}", async (int id, IMediator mediator, CancellationToken ct) =>
 {
-    var result = await mediator.SendAsync(new DeleteEmployeeCommand(id), ct);
-
-    return result.ToMinimalApiResult();
+    return await mediator.SendAsync(new DeleteEmployeeCommand(id), ct)
+        .ToMinimalApiResultAsync();
 });
 
 // 6. Post - Bulk Update (demonstrates Result.Combine and JoinErrorMessages)

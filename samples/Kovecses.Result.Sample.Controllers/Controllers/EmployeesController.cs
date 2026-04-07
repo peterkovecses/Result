@@ -8,18 +8,16 @@ public class EmployeesController(IMediator mediator) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id, CancellationToken ct)
     {
-        var result = await mediator.SendAsync(new GetEmployeeQuery(id), ct);
-
-        return result.ToActionResult();
+        return await mediator.SendAsync(new GetEmployeeQuery(id), ct)
+            .ToActionResultAsync();
     }
 
     // 2. Get - Wrapped (returns full Result object)
     [HttpGet("{id:int}/wrapped")]
     public async Task<IActionResult> GetWrapped(int id, CancellationToken ct)
     {
-        var result = await mediator.SendAsync(new GetEmployeeQuery(id), ct);
-
-        return result.ToActionResult(includeResultInResponse: true);
+        return await mediator.SendAsync(new GetEmployeeQuery(id), ct)
+            .ToActionResultAsync(includeResultInResponse: true);
     }
 
     // 2b. Get - Match with all errors (Error[] variant)

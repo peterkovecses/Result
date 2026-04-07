@@ -311,18 +311,28 @@ The library detects the nature of failures and responds accordingly:
 
 #### Standard REST (Public APIs)
 Returns the data on success (`200 OK` or `204 No Content`) and `ProblemDetails` on failure.
-```csharp
-// Minimal API Example
-app.MapGet("/users/{id}", (int id, IMediator m) => m.Send(new GetUser(id)).ToMinimalApiResult());
 
-// Controller Example
+```csharp
+// Minimal API Example (Asynchronous)
+app.MapGet("/users/{id}", (int id, IMediator m) => 
+    m.SendAsync(new GetUser(id)).ToMinimalApiResultAsync());
+
+// Controller Example (Asynchronous)
+[HttpGet("{id}")]
+public async Task<IActionResult> Get(int id) 
+    => await _service.GetByIdAsync(id).ToActionResultAsync();
+
+// Synchronous variants are also available
 public IActionResult Create(User cmd) => _service.Create(cmd).ToActionResult();
 ```
 
 #### Wrapped Results (Internal/Typed Clients)
 Returns the full `Result` object in the body (e.g., for Blazor or Typed Clients).
 ```csharp
-// Server-side
+// Server-side (Asynchronous)
+return await resultTask.ToMinimalApiResultAsync(includeResultInResponse: true);
+
+// Server-side (Synchronous)
 return result.ToMinimalApiResult(includeResultInResponse: true);
 
 // Client-side deserialization

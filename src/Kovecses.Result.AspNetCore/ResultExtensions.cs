@@ -111,6 +111,60 @@ public static class ResultExtensions
     public static IActionResult ToActionResult(this Error error) 
         => MapToActionResultProblem(Result.Failure(error), false);
 
+    /// <summary>
+    /// Asynchronously converts a <see cref="Result"/> to an <see cref="IResult"/> for Minimal APIs.
+    /// </summary>
+    /// <param name="resultTask">The task returning a result to convert.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body.</param>
+    /// <returns>A task representing the <see cref="IResult"/>.</returns>
+    public static async Task<IResult> ToMinimalApiResultAsync(this Task<Result> resultTask, bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.ToMinimalApiResult(includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously converts a <see cref="Result{TData}"/> to an <see cref="IResult"/> for Minimal APIs.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="resultTask">The task returning a result to convert.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body.</param>
+    /// <returns>A task representing the <see cref="IResult"/>.</returns>
+    public static async Task<IResult> ToMinimalApiResultAsync<TData>(this Task<Result<TData>> resultTask, bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.ToMinimalApiResult(includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously converts a <see cref="Result"/> to an <see cref="IActionResult"/> for Controllers.
+    /// </summary>
+    /// <param name="resultTask">The task returning a result to convert.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body.</param>
+    /// <returns>A task representing the <see cref="IActionResult"/>.</returns>
+    public static async Task<IActionResult> ToActionResultAsync(this Task<Result> resultTask, bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.ToActionResult(includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously converts a <see cref="Result{TData}"/> to an <see cref="IActionResult"/> for Controllers.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="resultTask">The task returning a result to convert.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body.</param>
+    /// <returns>A task representing the <see cref="IActionResult"/>.</returns>
+    public static async Task<IActionResult> ToActionResultAsync<TData>(this Task<Result<TData>> resultTask, bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.ToActionResult(includeResultInResponse);
+    }
+
     private static IResult MapToProblem(Result result, bool includeResultInResponse)
     {
         var errors = result.Errors ?? throw new InvalidOperationException("Failure result must have errors.");
