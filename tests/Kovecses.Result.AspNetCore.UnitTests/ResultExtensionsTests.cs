@@ -436,6 +436,114 @@ public class ResultExtensionsTests
 
     #endregion
 
+    #region MatchToMinimalApiResult
+
+    [Fact]
+    public void MatchToMinimalApiResult_WhenSuccess_ShouldReturnCustomResult()
+    {
+        // Arrange
+        var result = Result.Success("Data");
+
+        // Act
+        var apiResult = result.MatchToMinimalApiResult(data => Results.Ok($"Custom: {data}"));
+
+        // Assert
+        var okResult = apiResult.ShouldBeOfType<Ok<string>>();
+        okResult.Value.ShouldBe("Custom: Data");
+    }
+
+    [Fact]
+    public void MatchToMinimalApiResult_WhenFailure_ShouldReturnDefaultProblem()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound("Not found"));
+
+        // Act
+        var apiResult = result.MatchToMinimalApiResult(data => Results.Ok(data));
+
+        // Assert
+        var problemResult = apiResult.ShouldBeOfType<ProblemHttpResult>();
+        problemResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+    }
+
+    [Fact]
+    public async Task MatchToMinimalApiResultAsync_WhenSuccess_ShouldReturnCustomResult()
+    {
+        // Arrange
+        var resultTask = Task.FromResult(Result.Success("Data"));
+
+        // Act
+        var apiResult = await resultTask.MatchToMinimalApiResultAsync(data => Results.Ok($"Custom: {data}"));
+
+        // Assert
+        var okResult = apiResult.ShouldBeOfType<Ok<string>>();
+        okResult.Value.ShouldBe("Custom: Data");
+    }
+
+    #endregion
+
+    #region MatchToActionResult
+
+    [Fact]
+    public void MatchToActionResult_WhenSuccess_ShouldReturnCustomResult()
+    {
+        // Arrange
+        var result = Result.Success("Data");
+
+        // Act
+        var actionResult = result.MatchToActionResult(data => new OkObjectResult($"Custom: {data}"));
+
+        // Assert
+        var okResult = actionResult.ShouldBeOfType<OkObjectResult>();
+        okResult.Value.ShouldBe("Custom: Data");
+    }
+
+    [Fact]
+    public void MatchToActionResult_WhenFailure_ShouldReturnDefaultProblem()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound("Not found"));
+
+        // Act
+        var actionResult = result.MatchToActionResult(data => new OkObjectResult(data));
+
+        // Assert
+        var objectResult = actionResult.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+    }
+
+    [Fact]
+    public void MatchToActionResult_WhenFailureWithCustomMapper_ShouldReturnCustomFailure()
+    {
+        // Arrange
+        var result = Result.Failure<string>(Error.NotFound("Not found"));
+
+        // Act
+        var actionResult = result.MatchToActionResult(
+            data => new OkObjectResult(data),
+            errors => new BadRequestObjectResult(errors[0].Message));
+
+        // Assert
+        var badRequest = actionResult.ShouldBeOfType<BadRequestObjectResult>();
+        badRequest.Value.ShouldBe("Not found");
+    }
+
+    [Fact]
+    public async Task MatchToActionResultAsync_WhenSuccess_ShouldReturnCustomResult()
+    {
+        // Arrange
+        var resultTask = Task.FromResult(Result.Success("Data"));
+
+        // Act
+        var actionResult = await resultTask.MatchToActionResultAsync(data => new OkObjectResult($"Custom: {data}"));
+
+        // Assert
+        var okResult = actionResult.ShouldBeOfType<OkObjectResult>();
+        okResult.Value.ShouldBe("Custom: Data");
+    }
+
+    #endregion
+
     #region ToMinimalApiResultAsync
 
     [Fact]

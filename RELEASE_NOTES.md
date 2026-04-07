@@ -1,3 +1,12 @@
+# Release Notes - Kovecses.Result 2.9.0
+
+## New Features
+- **Async Result Mapping Extensions:** Added `ToActionResultAsync` and `ToMinimalApiResultAsync` for `Task<Result>` and `Task<Result<TData>>`. This enables a clean, fluent syntax for asynchronous controller actions and Minimal API endpoints (e.g., `return await mediator.Send(query).ToActionResultAsync();`).
+- **Smart Mapping Overloads:** Introduced `MatchToActionResult` and `MatchToMinimalApiResult` (with async counterparts). These methods allow you to handle the success case (e.g., returning `201 Created`) while the library automatically handles the failure mapping to `ProblemDetails`.
+- **Custom Failure Mapping:** The smart mapping methods also support an optional `onFailure` lambda for highly specific error handling scenarios.
+
+---
+
 # Release Notes - Kovecses.Result 2.8.0
 
 ## ⚠️ Breaking Change: Match Overload Renamed to MatchFirst

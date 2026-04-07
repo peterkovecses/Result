@@ -326,6 +326,23 @@ public async Task<IActionResult> Get(int id)
 public IActionResult Create(User cmd) => _service.Create(cmd).ToActionResult();
 ```
 
+#### Smart Mapping (Custom Success Path)
+The `MatchToActionResult` and `MatchToMinimalApiResult` methods (and their async counterparts) allow you to handle the success case (e.g., returning `201 Created`) while letting the library handle the failure mapping automatically.
+
+```csharp
+// Controller with custom success and default failure mapping
+[HttpPost]
+public async Task<IActionResult> Create(CreateCommand cmd)
+    => await _mediator.SendAsync(cmd)
+        .MatchToActionResultAsync(data => CreatedAtAction(nameof(Get), new { id = data.Id }, data));
+
+// Minimal API with custom success and custom failure mapping
+app.MapPost("/users", async (CreateUserCommand cmd, IMediator m) => 
+    await m.SendAsync(cmd).MatchToMinimalApiResultAsync(
+        data => Results.Created($"/users/{data.Id}", data),
+        errors => Results.BadRequest("Custom error message")));
+```
+
 #### Wrapped Results (Internal/Typed Clients)
 Returns the full `Result` object in the body (e.g., for Blazor or Typed Clients).
 ```csharp

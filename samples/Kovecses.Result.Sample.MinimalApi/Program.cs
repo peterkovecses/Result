@@ -27,22 +27,19 @@ employeesGroup.MapGet("/{id:int}/wrapped", async (int id, IMediator mediator, Ca
         .ToMinimalApiResultAsync(includeResultInResponse: true);
 });
 
-// 3. Post - MatchFirst variant (first error)
+// 3. Post - Smart mapping (async, custom success, default failure mapping)
 employeesGroup.MapPost("/", async (CreateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
 {
-    var result = await mediator.SendAsync(command, ct);
-
-    return result.MatchFirst(
-        data => Results.Created($"/employees/{data.Id}", data),
-        error => result.ToMinimalApiResult());
+    return await mediator.SendAsync(command, ct)
+        .MatchToMinimalApiResultAsync(data => Results.Created($"/employees/{data.Id}", data));
 });
 
-// 3b. Post - Match discard variant (ignore error details)
+// 3b. Post - Smart mapping (sync, custom success, custom failure mapping)
 employeesGroup.MapPost("/simple", async (CreateEmployeeCommand command, IMediator mediator, CancellationToken ct) =>
 {
     var result = await mediator.SendAsync(command, ct);
 
-    return result.Match(
+    return result.MatchToMinimalApiResult(
         data => Results.Created($"/employees/{data.Id}", data),
         _ => Results.StatusCode(StatusCodes.Status400BadRequest));
 });
@@ -75,14 +72,14 @@ employeesGroup.MapPut("/{id:int}", async (int id, UpdateEmployeeCommand command,
             errors => Result.Failure(errors).ToMinimalApiResult());
 });
 
-// 5. Delete - Standard REST
+// 5. Delete - Standard REST (Async mapping)
 employeesGroup.MapDelete("/{id:int}", async (int id, IMediator mediator, CancellationToken ct) =>
 {
     return await mediator.SendAsync(new DeleteEmployeeCommand(id), ct)
         .ToMinimalApiResultAsync();
 });
 
-// 6. Post - Bulk Update (demonstrates Result.Combine and JoinErrorMessages)
+// 6. Post - Bulk Update (Sync mapping example)
 employeesGroup.MapPost("/bulk-update", async (BulkUpdatePositionCommand command, IMediator mediator, CancellationToken ct) =>
 {
     var result = await mediator.SendAsync(command, ct);

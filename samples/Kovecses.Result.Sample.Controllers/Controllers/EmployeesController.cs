@@ -35,29 +35,26 @@ public class EmployeesController(IMediator mediator) : ControllerBase
             }));
     }
 
-    // 3. Post - MatchFirst variant (first error only)
+    // 3. Post - Smart mapping (async, custom success, default failure)
     [HttpPost]
     public async Task<IActionResult> Create(CreateEmployeeCommand command, CancellationToken ct)
     {
-        var result = await mediator.SendAsync(command, ct);
-
-        return result.MatchFirst(
-            data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
-            error => result.ToActionResult());
+        return await mediator.SendAsync(command, ct)
+            .MatchToActionResultAsync(data => CreatedAtAction(nameof(Get), new { id = data.Id }, data));
     }
 
-    // 3b. Post - Match discard variant (ignore error details)
+    // 3b. Post - Smart mapping (sync, custom success, custom failure)
     [HttpPost("simple")]
     public async Task<IActionResult> CreateSimple(CreateEmployeeCommand command, CancellationToken ct)
     {
         var result = await mediator.SendAsync(command, ct);
 
-        return result.Match(
+        return result.MatchToActionResult(
             data => CreatedAtAction(nameof(Get), new { id = data.Id }, data),
             _ => StatusCode(StatusCodes.Status400BadRequest, "Failed to create employee"));
     }
 
-    // 4. Put - Standard REST (Returns DTO and custom headers from Metadata)
+    // 4. Put - Standard REST (Sync mapping example)
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateEmployeeCommand command, CancellationToken ct)
     {
@@ -73,7 +70,7 @@ public class EmployeesController(IMediator mediator) : ControllerBase
         return result.ToActionResult();
     }
 
-    // 5. Delete - Standard REST
+    // 5. Delete - Standard REST (Sync mapping)
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {

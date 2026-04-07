@@ -11,6 +11,8 @@ namespace Kovecses.Result.AspNetCore;
 /// </summary>
 public static class ResultExtensions
 {
+    #region ToMinimalApiResult
+
     /// <summary>
     /// Converts a <see cref="Result"/> to an <see cref="IResult"/> for Minimal APIs.
     /// </summary>
@@ -52,6 +54,125 @@ public static class ResultExtensions
             ? Results.NoContent() 
             : Results.Ok(result.Data);
     }
+
+    /// <summary>
+    /// Asynchronously converts a <see cref="Result"/> to an <see cref="IResult"/> for Minimal APIs.
+    /// </summary>
+    /// <param name="resultTask">The task returning a result to convert.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body.</param>
+    /// <returns>A task representing the <see cref="IResult"/>.</returns>
+    public static async Task<IResult> ToMinimalApiResultAsync(this Task<Result> resultTask, bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.ToMinimalApiResult(includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously converts a <see cref="Result{TData}"/> to an <see cref="IResult"/> for Minimal APIs.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="resultTask">The task returning a result to convert.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body.</param>
+    /// <returns>A task representing the <see cref="IResult"/>.</returns>
+    public static async Task<IResult> ToMinimalApiResultAsync<TData>(this Task<Result<TData>> resultTask, bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.ToMinimalApiResult(includeResultInResponse);
+    }
+
+    #endregion
+
+    #region MatchToMinimalApiResult
+
+    /// <summary>
+    /// Matches a <see cref="Result{TData}"/> to an <see cref="IResult"/> for Minimal APIs, using a custom success mapper.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="result">The result to map.</param>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>An <see cref="IResult"/> representing the operation outcome.</returns>
+    public static IResult MatchToMinimalApiResult<TData>(
+        this Result<TData> result, 
+        Func<TData, IResult> onSuccess, 
+        Func<Error[], IResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        if (result.IsSuccess)
+        {
+            return onSuccess(result.Data!);
+        }
+
+        return onFailure?.Invoke(result.Errors!) ?? MapToProblem(result, includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Matches a <see cref="Result"/> to an <see cref="IResult"/> for Minimal APIs, using a custom success mapper.
+    /// </summary>
+    /// <param name="result">The result to map.</param>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>An <see cref="IResult"/> representing the operation outcome.</returns>
+    public static IResult MatchToMinimalApiResult(
+        this Result result, 
+        Func<IResult> onSuccess, 
+        Func<Error[], IResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        if (result.IsSuccess)
+        {
+            return onSuccess();
+        }
+
+        return onFailure?.Invoke(result.Errors!) ?? MapToProblem(result, includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously matches a <see cref="Result"/> to an <see cref="IResult"/> for Minimal APIs, using a custom success mapper.
+    /// </summary>
+    /// <param name="resultTask">The task returning a result to map.</param>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>A task representing the <see cref="IResult"/>.</returns>
+    public static async Task<IResult> MatchToMinimalApiResultAsync(
+        this Task<Result> resultTask, 
+        Func<IResult> onSuccess, 
+        Func<Error[], IResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.MatchToMinimalApiResult(onSuccess, onFailure, includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously matches a <see cref="Result{TData}"/> to an <see cref="IResult"/> for Minimal APIs, using a custom success mapper.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="resultTask">The task returning a result to map.</param>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>A task representing the <see cref="IResult"/>.</returns>
+    public static async Task<IResult> MatchToMinimalApiResultAsync<TData>(
+        this Task<Result<TData>> resultTask, 
+        Func<TData, IResult> onSuccess, 
+        Func<Error[], IResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.MatchToMinimalApiResult(onSuccess, onFailure, includeResultInResponse);
+    }
+
+    #endregion
+
+    #region ToActionResult
 
     /// <summary>
     /// Converts a <see cref="Result"/> to an <see cref="IActionResult"/> for Controllers.
@@ -96,49 +217,6 @@ public static class ResultExtensions
     }
 
     /// <summary>
-    /// Converts an <see cref="Error"/> to an <see cref="IResult"/> for Minimal APIs.
-    /// </summary>
-    /// <param name="error">The error to convert.</param>
-    /// <returns>An <see cref="IResult"/> representing the error.</returns>
-    public static IResult ToMinimalApiResult(this Error error) 
-        => MapToProblem(Result.Failure(error), false);
-
-    /// <summary>
-    /// Converts an <see cref="Error"/> to an <see cref="IActionResult"/> for Controllers.
-    /// </summary>
-    /// <param name="error">The error to convert.</param>
-    /// <returns>An <see cref="IActionResult"/> representing the error.</returns>
-    public static IActionResult ToActionResult(this Error error) 
-        => MapToActionResultProblem(Result.Failure(error), false);
-
-    /// <summary>
-    /// Asynchronously converts a <see cref="Result"/> to an <see cref="IResult"/> for Minimal APIs.
-    /// </summary>
-    /// <param name="resultTask">The task returning a result to convert.</param>
-    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body.</param>
-    /// <returns>A task representing the <see cref="IResult"/>.</returns>
-    public static async Task<IResult> ToMinimalApiResultAsync(this Task<Result> resultTask, bool includeResultInResponse = false)
-    {
-        var result = await resultTask;
-        
-        return result.ToMinimalApiResult(includeResultInResponse);
-    }
-
-    /// <summary>
-    /// Asynchronously converts a <see cref="Result{TData}"/> to an <see cref="IResult"/> for Minimal APIs.
-    /// </summary>
-    /// <typeparam name="TData">The type of the data.</typeparam>
-    /// <param name="resultTask">The task returning a result to convert.</param>
-    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body.</param>
-    /// <returns>A task representing the <see cref="IResult"/>.</returns>
-    public static async Task<IResult> ToMinimalApiResultAsync<TData>(this Task<Result<TData>> resultTask, bool includeResultInResponse = false)
-    {
-        var result = await resultTask;
-        
-        return result.ToMinimalApiResult(includeResultInResponse);
-    }
-
-    /// <summary>
     /// Asynchronously converts a <see cref="Result"/> to an <see cref="IActionResult"/> for Controllers.
     /// </summary>
     /// <param name="resultTask">The task returning a result to convert.</param>
@@ -164,6 +242,112 @@ public static class ResultExtensions
         
         return result.ToActionResult(includeResultInResponse);
     }
+
+    #endregion
+
+    #region MatchToActionResult
+
+    /// <summary>
+    /// Matches a <see cref="Result{TData}"/> to an <see cref="IActionResult"/> for Controllers, using a custom success mapper.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="result">The result to map.</param>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>An <see cref="IActionResult"/> representing the operation outcome.</returns>
+    public static IActionResult MatchToActionResult<TData>(
+        this Result<TData> result, 
+        Func<TData, IActionResult> onSuccess, 
+        Func<Error[], IActionResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        if (result.IsSuccess)
+        {
+            return onSuccess(result.Data!);
+        }
+
+        return onFailure?.Invoke(result.Errors!) ?? MapToActionResultProblem(result, includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Matches a <see cref="Result"/> to an <see cref="IActionResult"/> for Controllers, using a custom success mapper.
+    /// </summary>
+    /// <param name="result">The result to map.</param>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>An <see cref="IActionResult"/> representing the operation outcome.</returns>
+    public static IActionResult MatchToActionResult(
+        this Result result, 
+        Func<IActionResult> onSuccess, 
+        Func<Error[], IActionResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        if (result.IsSuccess)
+        {
+            return onSuccess();
+        }
+
+        return onFailure?.Invoke(result.Errors!) ?? MapToActionResultProblem(result, includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously matches a <see cref="Result"/> to an <see cref="IActionResult"/> for Controllers, using a custom success mapper.
+    /// </summary>
+    /// <param name="resultTask">The task returning a result to map.</param>
+    /// <param name="onSuccess">The function to execute on success.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>A task representing the <see cref="IActionResult"/>.</returns>
+    public static async Task<IActionResult> MatchToActionResultAsync(
+        this Task<Result> resultTask, 
+        Func<IActionResult> onSuccess, 
+        Func<Error[], IActionResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.MatchToActionResult(onSuccess, onFailure, includeResultInResponse);
+    }
+
+    /// <summary>
+    /// Asynchronously matches a <see cref="Result{TData}"/> to an <see cref="IActionResult"/> for Controllers, using a custom success mapper.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <param name="resultTask">The task returning a result to map.</param>
+    /// <param name="onSuccess">The function to execute on success with the data.</param>
+    /// <param name="onFailure">Optional function to execute on failure with the collection of errors. If not provided, the default mapping is used.</param>
+    /// <param name="includeResultInResponse">If true, the full <see cref="Result{TData}"/> object is returned in the response body on failure (only if <paramref name="onFailure"/> is null).</param>
+    /// <returns>A task representing the <see cref="IActionResult"/>.</returns>
+    public static async Task<IActionResult> MatchToActionResultAsync<TData>(
+        this Task<Result<TData>> resultTask, 
+        Func<TData, IActionResult> onSuccess, 
+        Func<Error[], IActionResult>? onFailure = null, 
+        bool includeResultInResponse = false)
+    {
+        var result = await resultTask;
+        
+        return result.MatchToActionResult(onSuccess, onFailure, includeResultInResponse);
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Converts an <see cref="Error"/> to an <see cref="IResult"/> for Minimal APIs.
+    /// </summary>
+    /// <param name="error">The error to convert.</param>
+    /// <returns>An <see cref="IResult"/> representing the error.</returns>
+    public static IResult ToMinimalApiResult(this Error error) 
+        => MapToProblem(Result.Failure(error), false);
+
+    /// <summary>
+    /// Converts an <see cref="Error"/> to an <see cref="IActionResult"/> for Controllers.
+    /// </summary>
+    /// <param name="error">The error to convert.</param>
+    /// <returns>An <see cref="IActionResult"/> representing the error.</returns>
+    public static IActionResult ToActionResult(this Error error) 
+        => MapToActionResultProblem(Result.Failure(error), false);
 
     private static IResult MapToProblem(Result result, bool includeResultInResponse)
     {
