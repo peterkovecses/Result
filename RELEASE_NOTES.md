@@ -1,3 +1,12 @@
+# Release Notes - Kovecses.Result 2.10.0
+
+## New Features
+- **Enhanced Fluent Assertions (Kovecses.Result.FluentAssertions):**
+    - **`HaveData(Action<TData> inspector)`:** Added a new overload that enables deep inspection of the result's data using a lambda. It automatically asserts that the result is successful and the data is not null before executing the inspector.
+    - **`WhichData` property:** Added a new property to `ResultAssertions<TData>` that allows direct access to the data for further chaining. It automatically performs success and null-check assertions.
+
+---
+
 # Release Notes - Kovecses.Result 2.9.0
 
 ## New Features

@@ -162,6 +162,20 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
     }
 
     /// <summary>
+    /// Asserts that the result has data and allows further assertions on it via an action.
+    /// </summary>
+    /// <param name="inspector">The action to perform assertions on the data.</param>
+    /// <returns>The <see cref="ResultAssertions{TData}"/> for further assertions.</returns>
+    public ResultAssertions<TData> HaveData(Action<TData> inspector)
+    {
+        BeSuccess();
+        Assert.NotNull(_subject.Data);
+        inspector(_subject.Data!);
+
+        return this;
+    }
+
+    /// <summary>
     /// Asserts that the result has data matching the predicate.
     /// </summary>
     /// <param name="predicate">The predicate to check the data.</param>
@@ -172,6 +186,23 @@ public class ResultAssertions<TData>(Result<TData> subject) : ResultAssertions(s
         Assert.True(predicate(_subject.Data), "The data does not match the expected predicate.");
         
         return this;
+    }
+
+    /// <summary>
+    /// Gets the data from the result for further assertions.
+    /// </summary>
+    /// <remarks>
+    /// This property will assert that the result is successful and the data is not null.
+    /// </remarks>
+    public TData WhichData
+    {
+        get
+        {
+            BeSuccess();
+            Assert.NotNull(_subject.Data);
+
+            return _subject.Data!;
+        }
     }
 
     /// <summary>

@@ -7,14 +7,14 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Kovecses.Result.AspNetCore</AssemblyName>
     <RootNamespace>Kovecses.Result.AspNetCore</RootNamespace>
-    <Version>2.9.0</Version>
+    <Version>2.10.0</Version>
     <Authors>Peter Kovecses</Authors>
-    <Description>ASP.NET Core extensions for Kovecses.Result to automatically map results to HTTP responses.</Description>
+    <Description>ASP.NET Core integration for Kovecses.Result. Automatically maps results to RFC 7807 ProblemDetails, including validation errors. Provides fluent extensions for Minimal APIs and Controllers.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/peterkovecses/Result</PackageProjectUrl>
     <RepositoryUrl>https://github.com/peterkovecses/Result</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>result;error-handling;aspnetcore;webapi</PackageTags>
+    <PackageTags>result-pattern;aspnetcore;webapi;minimal-api;problem-details;rfc7807;error-handling;mapping;rest</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 

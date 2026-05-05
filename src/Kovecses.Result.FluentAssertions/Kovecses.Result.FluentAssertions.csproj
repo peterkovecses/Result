@@ -7,14 +7,14 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Kovecses.Result.FluentAssertions</AssemblyName>
     <RootNamespace>Kovecses.Result.FluentAssertions</RootNamespace>
-    <Version>2.9.0</Version>
+    <Version>2.10.0</Version>
     <Authors>Peter Kovecses</Authors>
-    <Description>Fluent assertions for Kovecses.Result using xUnit.</Description>
+    <Description>Fluent assertions for Kovecses.Result. Provides a highly readable, chainable API for testing success, failures, data content, and validation errors using xUnit.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/peterkovecses/Result</PackageProjectUrl>
     <RepositoryUrl>https://github.com/peterkovecses/Result</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>result;error-handling;fluentassertions;test;unit-test</PackageTags>
+    <PackageTags>result-pattern;fluent-assertions;testing;unit-test;xunit;assertions;error-handling;quality-assurance</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 

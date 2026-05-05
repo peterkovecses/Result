@@ -382,7 +382,16 @@ public void Test_Operation()
     
     // Assert Success
     result.Should().BeSuccess()
-        .HaveData(u => u.Name == "John");
+        .HaveData(expectedUser)                      // 1. Equality check
+        .HaveData(u => u!.Name == "John")            // 2. Boolean predicate
+        .HaveData(u =>                               // 3. Action-based inspection (auto null-check)
+        {
+            u.Name.Should().Be("John");
+            u.Age.Should().BeGreaterThan(18);
+        });
+
+    // 4. Direct access via WhichData (auto success & null-check)
+    result.Should().WhichData.Name.Should().Be("John");
         
     // Assert Specific Error
     result.Should().BeFailure()
