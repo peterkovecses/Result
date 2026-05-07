@@ -50,4 +50,31 @@ public class MinimalApiIntegrationTests(WebApplicationFactory<Program> factory) 
             .HaveError(ErrorCodes.NotFound)
                 .HaveMessage("Employee 999 not found.");
     }
+
+    [Fact]
+    public async Task PostEmployee_WithInvalidData_ShouldReturnValidationProblemWithMetadata()
+    {
+        // Arrange
+        var command = new CreateEmployeeCommand("", ""); // Both empty
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/employees/validate-metadata", command);
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var errors = problem.GetProperty("errors");
+
+        // Metadata keys should be present as field names
+        Assert.True(errors.TryGetProperty("FullName", out var nameErrors));
+        Assert.Contains("Name is required.", nameErrors.EnumerateArray().Select(e => e.GetString()));
+
+        Assert.True(errors.TryGetProperty("Position", out var positionErrors));
+        Assert.Contains("Position is required.", positionErrors.EnumerateArray().Select(e => e.GetString()));
+        
+        // Generic code should NOT be a key in errors
+        Assert.False(errors.TryGetProperty(ErrorCodes.Validation, out _));
+    }
 }

@@ -115,4 +115,13 @@ employeesGroup.MapPost("/validate-wrapped", async (CreateEmployeeCommand command
 app.MapGet("/health", () => 
     Error.Unexpected("System check failed", "Health.ServiceDown").ToMinimalApiResult());
 
+// 10. Post - Aggregated Validation demonstrating automatic mapping of Metadata to ValidationProblemDetails
+app.MapPost("/employees/validate-metadata", async (CreateEmployeeCommand command) =>
+{
+    var validator = new CreateEmployeeAggregatedValidator();
+    var result = await validator.ValidateAsync(command, default);
+
+    return result.ToMinimalApiResult();
+});
+
 app.Run();

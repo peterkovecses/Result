@@ -242,7 +242,7 @@ var result = Result.Failure(validationError);
 }
 ```
 
-This pattern is recommended for handling multiple validation errors in application layers (e.g., MediatR ValidationBehavior). Clients can easily parse and display field-level errors directly from metadata without additional processing.
+This pattern is recommended for handling multiple validation errors in application layers (e.g., MediatR ValidationBehavior). Clients can easily parse and display field-level errors directly from metadata without additional processing. This pattern is natively supported by the `AspNetCore` mapping logic, automatically populating the `errors` dictionary in `ValidationProblemDetails`.
 
 
 ### Safety Helpers

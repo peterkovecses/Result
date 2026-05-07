@@ -1,3 +1,14 @@
+# Release Notes - Kovecses.Result 2.11.0
+
+## New Features
+- **Validation Metadata Support in ASP.NET Core (Kovecses.Result.AspNetCore):**
+    - **Automatic Mapping:** The `ToMinimalApiResult` and `ToActionResult` methods now fully support the metadata-based validation pattern. 
+    - **RFC 7807 Compliance:** Validation errors stored in the `Metadata` dictionary are now automatically extracted and mapped to the standard `errors` dictionary in `ValidationProblemDetails`.
+    - **Backward Compatibility:** Maintains support for the traditional approach where each validation error is a separate `Error` object. Mixed usage (code-based and metadata-based) is also supported and merged correctly.
+    - **Intelligent Extraction:** Support for various metadata value types, including strings, string arrays, and other enumerables, ensuring robust message extraction.
+
+---
+
 # Release Notes - Kovecses.Result 2.10.0
 
 ## New Features

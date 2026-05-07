@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Kovecses.Result</AssemblyName>
     <RootNamespace>Kovecses.Result</RootNamespace>
-    <Version>2.10.0</Version>
+    <Version>2.11.0</Version>
     <Authors>Peter Kovecses</Authors>
     <Description>High-performance, functional Result pattern implementation for .NET. Features railway-oriented programming (Map, Bind, Match), multiple error aggregation, and native System.Text.Json support. Optimized for MediatR pipelines.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

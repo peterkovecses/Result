@@ -78,4 +78,14 @@ public class EmployeesController(IMediator mediator) : ControllerBase
 
         return result.ToActionResult();
     }
+
+    // 6. Post - Aggregated Validation demonstrating automatic mapping of Metadata to ValidationProblemDetails
+    [HttpPost("validate-metadata")]
+    public async Task<IActionResult> ValidateMetadata(CreateEmployeeCommand command, CancellationToken ct)
+    {
+        var validator = new CreateEmployeeAggregatedValidator();
+        var result = await validator.ValidateAsync(command, ct);
+
+        return result.ToActionResult();
+    }
 }

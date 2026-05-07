@@ -32,9 +32,47 @@ internal static class ErrorResponseHelper
     };
 
     internal static IDictionary<string, string[]> GetValidationDictionary(Error[] errors)
-        => errors
-            .GroupBy(e => e.Code)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.Message).ToArray());
+    {
+        var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var error in errors)
+        {
+            if (error.Code != ErrorCodes.Validation)
+            {
+                AddMessages(result, error.Code, [error.Message]);
+            }
+
+            if (error.Metadata is not null)
+            {
+                foreach (var (key, value) in error.Metadata)
+                {
+                    AddMessages(result, key, ExtractMessages(value));
+                }
+            }
+        }
+
+        return result.ToDictionary(k => k.Key, v => v.Value.ToArray());
+    }
+
+    private static void AddMessages(Dictionary<string, List<string>> result, string key, IEnumerable<string> messages)
+    {
+        if (!result.TryGetValue(key, out var list))
+        {
+            list = [];
+            result[key] = list;
+        }
+
+        list.AddRange(messages);
+    }
+
+    private static List<string> ExtractMessages(object? value) => value switch
+    {
+        null => [],
+        string s => [s],
+        IEnumerable<string> stringList => [.. stringList],
+        System.Collections.IEnumerable enumerable => [.. enumerable.Cast<object>().Select(e => e?.ToString() ?? string.Empty)],
+        _ => [value.ToString() ?? string.Empty]
+    };
 
     internal static Dictionary<string, object?>? GetExtensions(Error[] errors, Error firstError)
     {

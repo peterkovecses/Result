@@ -53,6 +53,57 @@ public class ErrorResponseHelperTests
     }
 
     [Fact]
+    public void GetValidationDictionary_ShouldExtractFromMetadata()
+    {
+        // Arrange
+        var validationMetadata = new Dictionary<string, object>
+        {
+            ["Email"] = new[] { "Email is required.", "Email format is invalid." },
+            ["Password"] = new[] { "Password must be at least 8 characters." }
+        };
+
+        var validationError = Error.Validation(
+            ErrorCodes.Validation,
+            "Validation failed.",
+            validationMetadata
+        );
+
+        var errors = new[] { validationError };
+
+        // Act
+        var dict = ErrorResponseHelper.GetValidationDictionary(errors);
+
+        // Assert
+        dict.Count.ShouldBe(2);
+        dict["Email"].ShouldBe(["Email is required.", "Email format is invalid."]);
+        dict["Password"].ShouldBe(["Password must be at least 8 characters."]);
+        dict.ShouldNotContainKey(ErrorCodes.Validation);
+    }
+
+    [Fact]
+    public void GetValidationDictionary_ShouldMergeCodeAndMetadata()
+    {
+        // Arrange
+        var metadata = new Dictionary<string, object>
+        {
+            ["Email"] = "Metadata message"
+        };
+
+        var errors = new[]
+        {
+            Error.Validation("Email", "Code message"),
+            Error.Validation(ErrorCodes.Validation, "Generic message", metadata)
+        };
+
+        // Act
+        var dict = ErrorResponseHelper.GetValidationDictionary(errors);
+
+        // Assert
+        dict["Email"].ShouldBe(["Code message", "Metadata message"]);
+        dict.ShouldNotContainKey(ErrorCodes.Validation);
+    }
+
+    [Fact]
     public void GetExtensions_WhenMultipleErrors_ShouldReturnErrorsCollection()
     {
         // Arrange
