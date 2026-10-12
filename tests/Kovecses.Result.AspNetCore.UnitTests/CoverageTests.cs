@@ -12,7 +12,7 @@ public class CoverageTests
     public void GetTitle_WhenUnknownErrorType_ShouldReturnDefaultTitle()
     {
         // Arrange
-        var error = Error.Custom("Code", "Message", (ErrorType)999);
+        var error = new Error("Code", "Message", (ErrorType)999);
         var result = Result.Failure(error);
 
         // Act

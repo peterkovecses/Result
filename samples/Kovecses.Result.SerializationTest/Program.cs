@@ -53,7 +53,7 @@ Console.WriteLine("\n========================================");
 Console.WriteLine("TEST 4: Error with Metadata");
 Console.WriteLine("========================================\n");
 
-var errorWithMetadata = Error.Custom(
+var errorWithMetadata = new Error(
     "User.Locked",
     "Account is locked",
     ErrorType.Forbidden,

@@ -60,15 +60,34 @@ public enum ErrorType
 [JsonConverter(typeof(ErrorJsonConverter))]
 public record Error
 {
+    private readonly string _code = null!;
+    private readonly string _message = null!;
+
     /// <summary>
     /// Gets the unique business error code (e.g., "User.NotFound").
     /// </summary>
-    public string Code { get; init; }
+    public string Code
+    {
+        get => _code;
+        init
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value, nameof(Code));
+            _code = value;
+        }
+    }
 
     /// <summary>
     /// Gets the human-readable error message.
     /// </summary>
-    public string Message { get; init; }
+    public string Message
+    {
+        get => _message;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value, nameof(Message));
+            _message = value;
+        }
+    }
 
     /// <summary>
     /// Gets the technical type of the error for infrastructure handling.
@@ -88,24 +107,17 @@ public record Error
     /// <param name="type">The technical type of the error.</param>
     /// <param name="metadata">Optional metadata associated with the error.</param>
     /// <exception cref="ArgumentNullException">Thrown when code or message is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when code is empty or whitespace.</exception>
     public Error(string code, string message, ErrorType type, Dictionary<string, object>? metadata = null)
     {
-        Code = code ?? throw new ArgumentNullException(nameof(code));
-        Message = message ?? throw new ArgumentNullException(nameof(message));
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        ArgumentNullException.ThrowIfNull(message);
+
+        Code = code;
+        Message = message;
         Type = type;
         Metadata = metadata;
     }
-
-    /// <summary>
-    /// Creates a custom error with a specific type.
-    /// </summary>
-    /// <param name="code">The error code.</param>
-    /// <param name="message">The error message.</param>
-    /// <param name="type">The error type.</param>
-    /// <param name="metadata">Optional metadata.</param>
-    /// <returns>A new <see cref="Error"/> instance.</returns>
-    public static Error Custom(string code, string message, ErrorType type, Dictionary<string, object>? metadata = null)
-        => new(code, message, type, metadata);
 
     /// <summary>
     /// Creates a "Validation" error.
@@ -204,12 +216,19 @@ public class ErrorJsonConverter : JsonConverter<Error>
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
-        var code = GetStringProperty(root, "Code", options) ?? "Unknown";
-        var message = GetStringProperty(root, "Message", options) ?? "Unknown error";
+        var code = GetStringProperty(root, "Code", options);
+        var message = GetStringProperty(root, "Message", options);
         var type = GetEnumProperty<ErrorType>(root, "Type", options);
         var metadata = GetMetadataProperty(root, options);
 
-        return new Error(code, message, type, metadata);
+        try
+        {
+            return new Error(code!, message!, type, metadata);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new JsonException($"Invalid error payload: {ex.Message}", ex);
+        }
     }
 
     /// <inheritdoc />
@@ -237,7 +256,7 @@ public class ErrorJsonConverter : JsonConverter<Error>
         if (root.TryGetProperty(name, out var element) ||
             TryGetPropertyCaseInsensitive(root, propertyName, out element))
         {
-            return element.GetString();
+            return element.ValueKind == JsonValueKind.String ? element.GetString() : null;
         }
 
         return null;
