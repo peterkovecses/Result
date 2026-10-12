@@ -27,16 +27,12 @@ public sealed class CancelOrderHandler(IOrderRepository orders, IBookRepository 
             error => Task.FromResult<Result>(error));
     }
 
-    private async Task ReleaseStockAsync(Order order, CancellationToken cancellationToken)
+    private Task ReleaseStockAsync(Order order, CancellationToken cancellationToken)
     {
-        foreach (var line in order.Lines)
-        {
-            var book = await books.GetAsync(line.Isbn, cancellationToken);
+        var releases = order.Lines
+            .Select(line => new StockReservationRequest(line.Isbn, line.Quantity))
+            .ToList();
 
-            if (book.IsSuccess)
-            {
-                await books.SaveAsync(book.Data!.Release(line.Quantity), cancellationToken);
-            }
-        }
+        return books.ReleaseAsync(releases, cancellationToken);
     }
 }

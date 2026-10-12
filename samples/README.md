@@ -51,7 +51,7 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 | `Result.Combine` | `GetManyAsync`, `PlaceOrder`, `RestockBooks`, `ValidationDecorator` | planned | planned |
 | `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | planned | planned |
 | `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | planned | planned |
-| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary`, `InMemoryBookRepository` | planned | planned |
+| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary` | planned | planned |
 | `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` on `Task<Result<T>>` | `AddBook`, `ChangeBookPrice`, `RetireBook`, `GetOrder`, `PlaceOrder` | planned | planned |
 | `BindAsync` on `Result` and `Result<T>` instances | `RestockBooks`, `GetOrder`, `PlaceOrder` | planned | planned |
 | `EnsureAsync` with an async predicate | `RetireBook` | planned | planned |

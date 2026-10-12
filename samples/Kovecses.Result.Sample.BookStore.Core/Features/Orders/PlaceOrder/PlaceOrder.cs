@@ -110,12 +110,13 @@ public sealed class PlaceOrderHandler(
         if (charge.IsFailure)
         {
             logger.LogInformation("Payment for {CustomerId} failed: {Reason}", customerId, charge.FirstErrorMessage);
-            return charge.Errors!;
         }
 
         return charge
             .Tap(_ => logger.LogInformation("Payment for {CustomerId} was accepted.", customerId))
-            .Bind(receipt => Result.Success(new PaidReservation(reservation, receipt)));
+            .MatchFirst(
+                receipt => Result.Success(new PaidReservation(reservation, receipt)),
+                error => Result.Failure<PaidReservation>(error));
     }
 
     // Declines come back as failed results, infrastructure problems are exceptions that we translate here.

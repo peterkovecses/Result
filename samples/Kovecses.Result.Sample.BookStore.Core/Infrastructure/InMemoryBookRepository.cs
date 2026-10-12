@@ -90,7 +90,8 @@ public sealed class InMemoryBookRepository(IEnumerable<Book>? seed = null) : IBo
                     continue;
                 }
 
-                book.Restock(request.Quantity).Tap(restockedBook => _books[restockedBook.Isbn] = restockedBook);
+                // Release is unconditional, so a reservation is returned even if the book was retired meanwhile.
+                _books[book.Isbn] = book.Release(request.Quantity);
             }
         }
 
