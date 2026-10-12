@@ -132,73 +132,73 @@ public record Error
     /// <summary>
     /// Creates a "NotFound" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new not found <see cref="Error"/>.</returns>
-    public static Error NotFound(string message = "The requested resource was not found.", string code = ErrorCodes.NotFound)
+    public static Error NotFound(string code = ErrorCodes.NotFound, string message = "The requested resource was not found.")
         => new(code, message, ErrorType.NotFound);
 
     /// <summary>
     /// Creates an "Unauthorized" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new unauthorized <see cref="Error"/>.</returns>
-    public static Error Unauthorized(string message = "Authentication is required to access this resource.", string code = ErrorCodes.Unauthorized)
+    public static Error Unauthorized(string code = ErrorCodes.Unauthorized, string message = "Authentication is required to access this resource.")
         => new(code, message, ErrorType.Unauthorized);
 
     /// <summary>
     /// Creates a "Forbidden" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new forbidden <see cref="Error"/>.</returns>
-    public static Error Forbidden(string message = "You do not have permission to access this resource.", string code = ErrorCodes.Forbidden)
+    public static Error Forbidden(string code = ErrorCodes.Forbidden, string message = "You do not have permission to access this resource.")
         => new(code, message, ErrorType.Forbidden);
 
     /// <summary>
     /// Creates a "Conflict" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new conflict <see cref="Error"/>.</returns>
-    public static Error Conflict(string message = "A conflict occurred while processing the request.", string code = ErrorCodes.Conflict)
+    public static Error Conflict(string code = ErrorCodes.Conflict, string message = "A conflict occurred while processing the request.")
         => new(code, message, ErrorType.Conflict);
 
     /// <summary>
     /// Creates a "Failure" (BadRequest) error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new failure <see cref="Error"/>.</returns>
-    public static Error Failure(string message = "The request was invalid or cannot be served.", string code = ErrorCodes.Failure)
+    public static Error Failure(string code = ErrorCodes.Failure, string message = "The request was invalid or cannot be served.")
         => new(code, message, ErrorType.Failure);
 
     /// <summary>
     /// Creates a "Timeout" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new timeout <see cref="Error"/>.</returns>
-    public static Error Timeout(string message = "The operation has timed out.", string code = ErrorCodes.Timeout)
+    public static Error Timeout(string code = ErrorCodes.Timeout, string message = "The operation has timed out.")
         => new(code, message, ErrorType.Timeout);
 
     /// <summary>
     /// Creates an "Unexpected" internal error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new unexpected <see cref="Error"/>.</returns>
-    public static Error Unexpected(string message = "An unexpected error occurred while processing your request.", string code = ErrorCodes.Unexpected)
+    public static Error Unexpected(string code = ErrorCodes.Unexpected, string message = "An unexpected error occurred while processing your request.")
         => new(code, message, ErrorType.Unexpected);
 
     /// <summary>
     /// Creates a "Canceled" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new canceled <see cref="Error"/>.</returns>
-    public static Error Canceled(string message = "The operation was canceled.", string code = ErrorCodes.Canceled)
+    public static Error Canceled(string code = ErrorCodes.Canceled, string message = "The operation was canceled.")
         => new(code, message, ErrorType.Canceled);
 }
 

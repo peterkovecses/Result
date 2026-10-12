@@ -113,7 +113,7 @@ employeesGroup.MapPost("/validate-wrapped", async (CreateEmployeeCommand command
 
 // 9. Get - Direct Error mapping demo
 app.MapGet("/health", () => 
-    Error.Unexpected("System check failed", "Health.ServiceDown").ToMinimalApiResult());
+    Error.Unexpected("Health.ServiceDown", "System check failed").ToMinimalApiResult());
 
 // 10. Post - Aggregated Validation demonstrating automatic mapping of Metadata to ValidationProblemDetails
 app.MapPost("/employees/validate-metadata", async (CreateEmployeeCommand command) =>

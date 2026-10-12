@@ -73,7 +73,7 @@ public Result Create() => Result.Success();
 public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer"); // Implicit conversion
 
 // Failure (Single Error)
-public Result<Employee> Get(int id) => Error.NotFound($"Employee {id} not found."); // Implicit conversion
+public Result<Employee> Get(int id) => Error.NotFound(message: $"Employee {id} not found."); // Implicit conversion
 
 // Failure (Custom code and message - defaults to ErrorType.Failure / HTTP 400)
 public Result Process() => Result.Failure("Order.InvalidState", "The order cannot be modified in its current state.");
@@ -190,12 +190,12 @@ Define domain-specific errors and attach extra context to any result.
 ```csharp
 // 1. Define constants for your business error codes
 public static class UserErrorCodes {
-    public const string Disabled = "User.Disabled";
+    public const string AccountLocked = "User.AccountLocked";
 }
 
 // 2. Create a factory for domain-specific Error objects
 public static class UserErrors {
-    public static Error Disabled(int id) => Error.Disabled("User is disabled.", UserErrorCodes.Disabled);
+    public static Error AccountLocked(int id) => Error.Forbidden(UserErrorCodes.AccountLocked, $"User {id} is locked and cannot perform this action.");
 }
 
 // Attach Success Metadata
@@ -361,7 +361,7 @@ if (result.IsSuccess)
 #### Direct Error Mapping
 You can also map a single `Error` object directly without wrapping it in a `Result` first.
 ```csharp
-Error error = Error.NotFound("User not found");
+Error error = Error.NotFound(message: "User not found");
 return error.ToMinimalApiResult(); // Returns 404 ProblemDetails
 return error.ToActionResult();     // Returns 404 ObjectResult(ProblemDetails)
 ```
@@ -409,8 +409,8 @@ public void Test_Operation()
 
     // Assert detailed Error properties and chain back to Result
     result.Should()
-        .HaveError("User.Disabled")
-            .HaveMessage("User is disabled.").And
+        .HaveError("User.AccountLocked")
+            .HaveMessage("User 42 is locked and cannot perform this action.").And
         .BeFailure();
 
     // Assert that accessing data on a failure result throws the correct exception
