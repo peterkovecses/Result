@@ -198,8 +198,14 @@ public class ErrorTests
     [Fact]
     public void Constructor_WhenCodeIsNull_ShouldThrowArgumentNullException()
     {
-        var ex = Assert.Throws<ArgumentNullException>(() => new Error(null!, "Message", ErrorType.Failure));
-        Assert.Equal("code", ex.ParamName);
+        // Arrange
+        string code = null!;
+
+        // Act
+        var exception = Assert.Throws<ArgumentNullException>(() => new Error(code, "Message", ErrorType.Failure));
+
+        // Assert
+        Assert.Equal("code", exception.ParamName);
     }
 
     [Theory]
@@ -207,34 +213,60 @@ public class ErrorTests
     [InlineData("   ")]
     public void Constructor_WhenCodeIsEmptyOrWhitespace_ShouldThrowArgumentException(string code)
     {
-        var ex = Assert.Throws<ArgumentException>(() => new Error(code, "Message", ErrorType.Failure));
-        Assert.Equal("code", ex.ParamName);
+        // Arrange & Act
+        var exception = Assert.Throws<ArgumentException>(() => new Error(code, "Message", ErrorType.Failure));
+
+        // Assert
+        Assert.Equal("code", exception.ParamName);
     }
 
     [Fact]
     public void Constructor_WhenMessageIsNull_ShouldThrowArgumentNullException()
     {
-        var ex = Assert.Throws<ArgumentNullException>(() => new Error("Code", null!, ErrorType.Failure));
-        Assert.Equal("message", ex.ParamName);
+        // Arrange
+        string message = null!;
+
+        // Act
+        var exception = Assert.Throws<ArgumentNullException>(() => new Error("Code", message, ErrorType.Failure));
+
+        // Assert
+        Assert.Equal("message", exception.ParamName);
     }
 
     [Fact]
     public void Constructor_WhenMessageIsEmpty_ShouldBeValid()
     {
+        // Arrange & Act
         var error = new Error("Code", string.Empty, ErrorType.Failure);
 
+        // Assert
         error.Should().HaveMessage(string.Empty);
     }
 
-    [Fact]
-    public void Failure_WhenCodeOrMessageInvalid_ShouldThrow()
+    [Theory]
+    [InlineData(null, "Message", typeof(ArgumentNullException))]
+    [InlineData(" ", "Message", typeof(ArgumentException))]
+    [InlineData("Code", null, typeof(ArgumentNullException))]
+    public void Failure_WhenCodeOrMessageInvalid_ShouldThrow(string? code, string? message, Type expectedException)
     {
-        Assert.Throws<ArgumentNullException>(() => Result.Failure(null!, "Message"));
-        Assert.Throws<ArgumentException>(() => Result.Failure(" ", "Message"));
-        Assert.Throws<ArgumentNullException>(() => Result.Failure("Code", null!));
-        Assert.Throws<ArgumentNullException>(() => Result.Failure<string>(null!, "Message"));
-        Assert.Throws<ArgumentException>(() => Result.Failure<string>("", "Message"));
-        Assert.Throws<ArgumentNullException>(() => Result.Failure<string>("Code", null!));
+        // Arrange & Act
+        var exception = Record.Exception(() => Result.Failure(code!, message!));
+
+        // Assert
+        Assert.IsType(expectedException, exception);
+    }
+
+    [Theory]
+    [InlineData(null, "Message", typeof(ArgumentNullException))]
+    [InlineData("", "Message", typeof(ArgumentException))]
+    [InlineData("Code", null, typeof(ArgumentNullException))]
+    public void FailureOfT_WhenCodeOrMessageInvalid_ShouldThrow(string? code, string? message, Type expectedException)
+    {
+        // Arrange & Act
+        var exception = Record.Exception(() => Result.Failure<string>(code!, message!));
+
+        // Assert
+        Assert.IsType(expectedException, exception);
     }
 
     [Theory]
@@ -242,36 +274,56 @@ public class ErrorTests
     [InlineData("  ")]
     public void With_WhenCodeIsEmptyOrWhitespace_ShouldThrowArgumentException(string code)
     {
+        // Arrange
         var error = Error.NotFound();
 
-        Assert.Throws<ArgumentException>(() => error with { Code = code });
+        // Act
+        var exception = Record.Exception(() => error with { Code = code });
+
+        // Assert
+        Assert.IsType<ArgumentException>(exception);
     }
 
     [Fact]
     public void With_WhenCodeIsNull_ShouldThrowArgumentNullException()
     {
+        // Arrange
         var error = Error.NotFound();
 
-        Assert.Throws<ArgumentNullException>(() => error with { Code = null! });
+        // Act
+        var exception = Record.Exception(() => error with { Code = null! });
+
+        // Assert
+        Assert.IsType<ArgumentNullException>(exception);
     }
 
     [Fact]
     public void With_WhenMessageIsNull_ShouldThrowArgumentNullException()
     {
+        // Arrange
         var error = Error.NotFound();
 
-        Assert.Throws<ArgumentNullException>(() => error with { Message = null! });
+        // Act
+        var exception = Record.Exception(() => error with { Message = null! });
+
+        // Assert
+        Assert.IsType<ArgumentNullException>(exception);
     }
 
     [Fact]
-    public void With_WhenValidValuesOrMetadata_ShouldCopy()
+    public void With_WhenValidValuesAndMetadata_ShouldCopy()
     {
+        // Arrange
         var error = Error.NotFound();
         var metadata = new Dictionary<string, object> { ["Id"] = 1 };
 
-        var copy = error with { Code = "New.Code", Message = "", Metadata = metadata };
+        // Act
+        var copy = error with { Code = "New.Code", Message = string.Empty, Metadata = metadata };
 
-        copy.Should().HaveCode("New.Code").HaveMessage("").HaveMetadata("Id", 1);
+        // Assert
+        copy.Should().HaveCode("New.Code")
+            .HaveMessage(string.Empty)
+            .HaveMetadata("Id", 1);
     }
 
     [Theory]
@@ -283,37 +335,74 @@ public class ErrorTests
     [InlineData("{\"code\":\"c\",\"message\":null}")]
     public void Deserialize_WhenCodeOrMessageInvalid_ShouldThrowJsonException(string json)
     {
-        var ex = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Error>(json));
+        // Arrange & Act
+        var exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Error>(json));
 
-        Assert.IsAssignableFrom<ArgumentException>(ex.InnerException);
+        // Assert
+        Assert.IsAssignableFrom<ArgumentException>(exception.InnerException);
     }
 
     [Fact]
     public void Deserialize_WhenMessageEmptyAndTypeMissing_ShouldDefaultToFailure()
     {
-        var error = JsonSerializer.Deserialize<Error>("{\"code\":\"c\",\"message\":\"\"}");
+        // Arrange
+        const string json = "{\"code\":\"c\",\"message\":\"\"}";
 
-        error.Should().HaveCode("c").HaveMessage("").HaveType(ErrorType.Failure);
+        // Act
+        var error = JsonSerializer.Deserialize<Error>(json);
+
+        // Assert
+        error.Should().HaveCode("c")
+            .HaveMessage(string.Empty)
+            .HaveType(ErrorType.Failure);
     }
 
     [Fact]
     public void Deserialize_WhenResultContainsInvalidError_ShouldThrowJsonException()
     {
+        // Arrange
         const string json = "{\"isSuccess\":false,\"errors\":[{\"code\":\"\",\"message\":\"m\",\"type\":0}]}";
 
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Result>(json));
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Result<string>>(json));
+        // Act
+        var resultException = Record.Exception(() => JsonSerializer.Deserialize<Result>(json));
+        var resultOfTException = Record.Exception(() => JsonSerializer.Deserialize<Result<string>>(json));
+
+        // Assert
+        Assert.IsType<JsonException>(resultException);
+        Assert.IsType<JsonException>(resultOfTException);
     }
 
     [Fact]
-    public void RoundTrip_ForResultAndResultOfT_ShouldPreserveError()
+    public void RoundTrip_ForResult_ShouldPreserveError()
     {
-        var error = Error.Conflict("Taken.", "User.Taken");
+        // Arrange
+        var original = Result.Failure(Error.Conflict("Taken.", "User.Taken"));
 
-        var result = JsonSerializer.Deserialize<Result>(JsonSerializer.Serialize(Result.Failure(error)));
-        var resultOfT = JsonSerializer.Deserialize<Result<string>>(JsonSerializer.Serialize(Result.Failure<string>(error)));
+        // Act
+        var json = JsonSerializer.Serialize(original);
+        var deserialized = JsonSerializer.Deserialize<Result>(json);
 
-        Assert.Equal(error.Code, result!.Errors!.Single().Code);
-        Assert.Equal(error.Code, resultOfT!.Errors!.Single().Code);
+        // Assert
+        deserialized!.Should().BeFailure()
+            .HaveError("User.Taken")
+            .HaveMessage("Taken.")
+            .HaveType(ErrorType.Conflict);
+    }
+
+    [Fact]
+    public void RoundTrip_ForResultOfT_ShouldPreserveError()
+    {
+        // Arrange
+        var original = Result.Failure<string>(Error.Conflict("Taken.", "User.Taken"));
+
+        // Act
+        var json = JsonSerializer.Serialize(original);
+        var deserialized = JsonSerializer.Deserialize<Result<string>>(json);
+
+        // Assert
+        deserialized!.Should().BeFailure()
+            .HaveError("User.Taken")
+            .HaveMessage("Taken.")
+            .HaveType(ErrorType.Conflict);
     }
 }
