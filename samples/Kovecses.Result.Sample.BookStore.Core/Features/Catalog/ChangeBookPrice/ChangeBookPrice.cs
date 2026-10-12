@@ -14,7 +14,6 @@ public sealed class ChangeBookPriceHandler(IBookRepository books) : IRequestHand
 {
     public async Task<Result<BookDto>> HandleAsync(ChangeBookPriceCommand request, CancellationToken cancellationToken)
         => await books.GetAsync(request.Isbn, cancellationToken)
-            .BindAsync(book => book.ChangePrice(request.NewPrice))
-            .TapAsync(book => books.SaveAsync(book, cancellationToken))
+            .BindAsync(book => books.UpdateAsync(book.Isbn, current => current.ChangePrice(request.NewPrice), cancellationToken))
             .MapAsync(book => BookDto.From(book));
 }

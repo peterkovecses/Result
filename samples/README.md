@@ -44,7 +44,7 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 
 | Library feature | Core | MinimalApi | Controllers |
 |---|---|---|---|
-| `Result.Success()` / `Success(data)` / `Success(metadata)` | `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | planned | planned |
+| `Result.Success()` / `Success(data)` / `Success(metadata)` | `ValidationErrors`, `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | planned | planned |
 | `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | planned | planned |
 | Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | planned | planned |
 | `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | planned | planned |

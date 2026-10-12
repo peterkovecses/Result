@@ -15,6 +15,11 @@ public interface IBookRepository
     Task SaveAsync(Book book, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Atomically applies <paramref name="update"/> to the currently stored book, so concurrent stock reservations are never overwritten.
+    /// </summary>
+    Task<Result<Book>> UpdateAsync(string isbn, Func<Book, Result<Book>> update, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Attempts to reserve stock for every requested line atomically. On failure, no stock is changed.
     /// </summary>
     Task<Result<IReadOnlyList<Book>>> TryReserveAsync(IReadOnlyList<StockReservationRequest> requests, CancellationToken cancellationToken);

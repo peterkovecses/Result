@@ -20,4 +20,21 @@ public class InMemoryBookRepositoryTests
         (await _sut.GetAsync(TestData.CleanCodeIsbn, default)).Should().BeSuccess()
             .HaveData(book => book!.Stock == 8 && book.IsRetired);
     }
+
+    [Fact]
+    public async Task UpdateAsync_ConcurrentWithReservation_ShouldNotOverwriteReservedStock()
+    {
+        // Arrange
+        var requests = new[] { new StockReservationRequest(TestData.CleanCodeIsbn, 1) };
+
+        // Act
+        var updates = Enumerable.Range(0, 8).Select(_ => Task.Run(() => _sut.UpdateAsync(
+            TestData.CleanCodeIsbn, book => book.ChangePrice(book.Price + 1), default)));
+        var reservations = Enumerable.Range(0, 8).Select(_ => Task.Run(() => _sut.TryReserveAsync(requests, default)));
+        await Task.WhenAll(updates.Concat(reservations.Cast<Task>()));
+
+        // Assert
+        (await _sut.GetAsync(TestData.CleanCodeIsbn, default)).Should().BeSuccess()
+            .HaveData(book => book!.Stock == 0 && book.Price == TestData.CleanCode().Price + 8);
+    }
 }

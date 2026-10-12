@@ -41,16 +41,19 @@ public sealed class RestockBooksHandler(IBookRepository books, ILogger<RestockBo
             logger.LogWarning("Restock rejected: {Reasons}", rejections.JoinErrorMessages());
         }
 
-        return await rejections.BindAsync(() => SaveAllAsync(restocked, cancellationToken));
+        return await rejections.BindAsync(() => SaveAllAsync(request.Items, cancellationToken));
     }
 
-    private async Task<Result> SaveAllAsync(Result<Book>[] restocked, CancellationToken cancellationToken)
+    private async Task<Result> SaveAllAsync(IReadOnlyList<RestockItem> items, CancellationToken cancellationToken)
     {
-        foreach (var book in restocked.Select(result => result.ValueOrThrow()))
+        var applied = new List<Result<Book>>(items.Count);
+
+        foreach (var item in items)
         {
-            await books.SaveAsync(book, cancellationToken);
+            applied.Add(await books.UpdateAsync(item.Isbn, book => book.Restock(item.Quantity), cancellationToken));
         }
 
-        return Result.Success(new Dictionary<string, object> { ["restockedBooks"] = restocked.Length });
+        return Result.Combine(applied.ToArray())
+            .Bind(() => Result.Success(new Dictionary<string, object> { ["restockedBooks"] = items.Count }));
     }
 }

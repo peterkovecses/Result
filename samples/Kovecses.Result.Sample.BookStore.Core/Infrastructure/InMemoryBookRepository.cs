@@ -34,9 +34,27 @@ public sealed class InMemoryBookRepository(IEnumerable<Book>? seed = null) : IBo
 
     public Task SaveAsync(Book book, CancellationToken cancellationToken)
     {
-        _books[book.Isbn] = book;
+        lock (_syncRoot)
+        {
+            _books[book.Isbn] = book;
+        }
 
         return Task.CompletedTask;
+    }
+
+    public Task<Result<Book>> UpdateAsync(string isbn, Func<Book, Result<Book>> update, CancellationToken cancellationToken)
+    {
+        lock (_syncRoot)
+        {
+            if (!_books.TryGetValue(isbn, out var current))
+            {
+                return Task.FromResult<Result<Book>>(BookErrors.NotFound(isbn));
+            }
+
+            var updated = update(current).Tap(book => _books[book.Isbn] = book);
+
+            return Task.FromResult(updated);
+        }
     }
 
     public Task<Result<IReadOnlyList<Book>>> TryReserveAsync(IReadOnlyList<StockReservationRequest> requests, CancellationToken cancellationToken)

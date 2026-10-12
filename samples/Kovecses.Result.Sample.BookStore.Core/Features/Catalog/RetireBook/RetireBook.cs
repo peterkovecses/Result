@@ -10,8 +10,7 @@ public sealed class RetireBookHandler(IBookRepository books, IOrderRepository or
             .EnsureAsync(
                 async _ => !await orders.HasOpenOrdersForAsync(request.Isbn, cancellationToken),
                 BookErrors.HasOpenOrders(request.Isbn))
-            .BindAsync(book => book.Retire())
-            .TapAsync(book => books.SaveAsync(book, cancellationToken));
+            .BindAsync(book => books.UpdateAsync(book.Isbn, current => current.Retire(), cancellationToken));
 
         return retired.ToResult();
     }
