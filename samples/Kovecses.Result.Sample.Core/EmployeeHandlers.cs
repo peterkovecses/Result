@@ -31,7 +31,7 @@ public sealed class EmployeeHandlers :
         var employee = Employees.FirstOrDefault(e => e.Id == request.Id);
         
         return employee is null
-            ? Task.FromResult<Result<Employee>>(Error.NotFound($"Employee {request.Id} not found."))
+            ? Task.FromResult<Result<Employee>>(Error.NotFound(message: $"Employee {request.Id} not found."))
             : Task.FromResult<Result<Employee>>(employee);
     }
 
@@ -40,7 +40,7 @@ public sealed class EmployeeHandlers :
         // Business Rule: Conflict check
         if (Employees.Any(e => e.FullName == request.FullName))
         {
-            return Task.FromResult<Result<Employee>>(Error.Conflict($"Employee with name {request.FullName} already exists."));
+            return Task.FromResult<Result<Employee>>(Error.Conflict(message: $"Employee with name {request.FullName} already exists."));
         }
 
         var newEmployee = new Employee(Employees.Max(e => e.Id) + 1, request.FullName, request.Position);
@@ -58,7 +58,7 @@ public sealed class EmployeeHandlers :
         // 1. Domain Conflict
         if (Employees.Any(e => e.FullName == request.FullName))
         {
-            errors.Add(Error.Conflict($"Employee {request.FullName} already exists."));
+            errors.Add(Error.Conflict(message: $"Employee {request.FullName} already exists."));
         }
 
         // 2. Validation Errors (grouped)
@@ -158,7 +158,7 @@ public sealed class EmployeeHandlers :
         var employee = Employees.FirstOrDefault(e => e.Id == id);
         
         return Task.FromResult(employee is null 
-            ? Result.Failure<Employee>(Error.NotFound($"Employee {id} not found.")) 
+            ? Result.Failure<Employee>(Error.NotFound(message: $"Employee {id} not found.")) 
             : Result.Success(employee));
     }
 
@@ -167,7 +167,7 @@ public sealed class EmployeeHandlers :
         // Business Rule: Cannot demote the Boss to a PM
         if (employee.Id == 1 && newPosition == "Product Manager")
         {
-            return Task.FromResult<Result<Employee>>(Error.Conflict("The Boss cannot be demoted to a Product Manager."));
+            return Task.FromResult<Result<Employee>>(Error.Conflict(message: "The Boss cannot be demoted to a Product Manager."));
         }
         
         return Task.FromResult(Result.Success(employee));
@@ -186,8 +186,8 @@ public sealed class EmployeeHandlers :
         if (request.Id == 1)
         {
             return Task.FromResult<Result>(Error.Failure(
-                message: "The primary administrator (The Boss) cannot be deleted from the system.",
-                code: EmployeeErrorCodes.CannotDeleteBoss));
+                EmployeeErrorCodes.CannotDeleteBoss,
+                "The primary administrator (The Boss) cannot be deleted from the system."));
         }
 
         Employees.Remove(employee);
@@ -212,7 +212,7 @@ public sealed class EmployeeHandlers :
 
         return result.Match(
             employee => $"Employee {employee.FullName} works as {employee.Position}.",
-            errors => Result.Failure<string>(Error.NotFound(result.JoinErrorMessages(", "))));
+            errors => Result.Failure<string>(Error.NotFound(message: result.JoinErrorMessages(", "))));
     }
 
     // Example 3: Match discard - ignore error details
@@ -222,6 +222,6 @@ public sealed class EmployeeHandlers :
 
         return result.Match(
             employee => $"Employee {employee.FullName} works as {employee.Position}.",
-            _ => Result.Failure<string>(Error.NotFound("Could not retrieve employee summary")));
+            _ => Result.Failure<string>(Error.NotFound(message: "Could not retrieve employee summary")));
     }
 }

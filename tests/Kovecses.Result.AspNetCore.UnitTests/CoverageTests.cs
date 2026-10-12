@@ -1,9 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using Shouldly;
-using Xunit;
-
 namespace Kovecses.Result.AspNetCore.UnitTests;
 
 public class CoverageTests
@@ -29,7 +23,7 @@ public class CoverageTests
         // Arrange
         var errors = new[] 
         { 
-            Error.NotFound("Not Found"), 
+            Error.NotFound(message: "Not Found"), 
             Error.Validation("Key", "Error") 
         };
         var result = Result.Failure(errors);
@@ -47,7 +41,7 @@ public class CoverageTests
     {
         // Arrange
         var metadata = new Dictionary<string, object> { { "TraceId", "123" } };
-        var error = Error.NotFound("Not Found") with { Metadata = metadata };
+        var error = Error.NotFound(message: "Not Found") with { Metadata = metadata };
         var result = Result.Failure(error);
 
         // Act
@@ -64,7 +58,7 @@ public class CoverageTests
     {
         // Arrange
         var metadata = new Dictionary<string, object> { { "TraceId", "123" } };
-        var error = Error.Conflict("Conflict") with { Metadata = metadata };
+        var error = Error.Conflict(message: "Conflict") with { Metadata = metadata };
         var result = Result.Failure(error);
 
         // Act

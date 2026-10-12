@@ -1,7 +1,4 @@
-﻿using System.Text.Json;
-using Kovecses.Result;
-
-Console.WriteLine("=== Kovecses.Result Serialization Test ===\n");
+﻿Console.WriteLine("=== Kovecses.Result Serialization Test ===\n");
 
 // Test DTOs
 var userDto = new UserDto(1, "John Doe", "john@example.com");
@@ -34,7 +31,7 @@ Console.WriteLine("========================================\n");
 var failureResult = Result.Failure<UserDto>(
 [
     Error.Validation("Email", "Email is required"),
-    Error.NotFound("User not found")
+    Error.NotFound(message: "User not found")
 ]);
 TestSerialization("Default Options", failureResult, defaultOptions);
 TestSerialization("CamelCase Options", failureResult, camelCaseOptions);
@@ -45,7 +42,7 @@ Console.WriteLine("TEST 3: Non-generic Result Serialization");
 Console.WriteLine("========================================\n");
 
 var simpleSuccess = Result.Success();
-var simpleFailure = Result.Failure(Error.Unauthorized("Access denied"));
+var simpleFailure = Result.Failure(Error.Unauthorized(message: "Access denied"));
 TestSerialization("Simple Success", simpleSuccess, camelCaseOptions);
 TestSerialization("Simple Failure", simpleFailure, camelCaseOptions);
 

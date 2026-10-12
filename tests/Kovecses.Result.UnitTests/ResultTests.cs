@@ -108,7 +108,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorArrayToResult_ShouldReturnFailure()
     {
         // Arrange
-        Error[] errors = [Error.Failure("Msg1", "Code1"), Error.Failure("Msg2", "Code2")];
+        Error[] errors = [Error.Failure("Code1", "Msg1"), Error.Failure("Code2", "Msg2")];
 
         // Act
         Result result = errors;
@@ -125,7 +125,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorListToResult_ShouldReturnFailure()
     {
         // Arrange
-        var errors = new List<Error> { Error.Failure("Msg1", "Code1"), Error.Failure("Msg2", "Code2") };
+        var errors = new List<Error> { Error.Failure("Code1", "Msg1"), Error.Failure("Code2", "Msg2") };
 
         // Act
         Result result = errors;
@@ -140,7 +140,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorArrayToGenericResult_ShouldReturnFailure()
     {
         // Arrange
-        Error[] errors = [Error.Failure("Msg1", "Code1")];
+        Error[] errors = [Error.Failure("Code1", "Msg1")];
 
         // Act
         Result<int> result = errors;
@@ -155,7 +155,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorListToGenericResult_ShouldReturnFailure()
     {
         // Arrange
-        var errors = new List<Error> { Error.Failure("Msg1", "Code1") };
+        var errors = new List<Error> { Error.Failure("Code1", "Msg1") };
 
         // Act
         Result<string> result = errors;
@@ -484,7 +484,7 @@ public class ResultTests
     {
         // Arrange
         var error1 = Error.Validation(ErrorCodes.Validation, "Message") with { Metadata = new Dictionary<string, object> { { "F1", "E1" } } };
-        var error2 = Error.Failure("F2", "C.2") with { Metadata = new Dictionary<string, object> { { "C.2", "F2" } } };
+        var error2 = Error.Failure("C.2", "F2") with { Metadata = new Dictionary<string, object> { { "C.2", "F2" } } };
 
         // Act
         var result = Result.Combine(Result.Failure(error1), Result.Failure(error2));

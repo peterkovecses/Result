@@ -78,7 +78,7 @@ public class ResultExtensionsTests
     public void ToMinimalApiResult_WhenFailure_ShouldReturnProblem()
     {
         // Arrange
-        var error = Error.NotFound("Resource not found");
+        var error = Error.NotFound(message: "Resource not found");
         var result = Result.Failure(error);
 
         // Act
@@ -151,7 +151,7 @@ public class ResultExtensionsTests
     public void Error_ToMinimalApiResult_ShouldReturnProblem()
     {
         // Arrange
-        var error = Error.NotFound("Error msg");
+        var error = Error.NotFound(message: "Error msg");
 
         // Act
         var apiResult = error.ToMinimalApiResult();
@@ -303,7 +303,7 @@ public class ResultExtensionsTests
     public void Error_ToActionResult_ShouldReturnProblemDetails()
     {
         // Arrange
-        var error = Error.Conflict("Error msg");
+        var error = Error.Conflict(message: "Error msg");
 
         // Act
         var actionResult = error.ToActionResult();
@@ -355,7 +355,7 @@ public class ResultExtensionsTests
         // Arrange
         var errors = new[]
         {
-            Error.NotFound("Not found"),
+            Error.NotFound(message: "Not found"),
             Error.Validation("Key", "Error")
         };
         var result = Result.Failure(errors);
@@ -375,7 +375,7 @@ public class ResultExtensionsTests
         // Arrange
         var errors = new[]
         {
-            Error.Conflict("Conflict"),
+            Error.Conflict(message: "Conflict"),
             Error.Validation("Key", "Error")
         };
         var result = Result.Failure(errors);
@@ -456,7 +456,7 @@ public class ResultExtensionsTests
     public void MatchToMinimalApiResult_WhenFailure_ShouldReturnDefaultProblem()
     {
         // Arrange
-        var result = Result.Failure<string>(Error.NotFound("Not found"));
+        var result = Result.Failure<string>(Error.NotFound(message: "Not found"));
 
         // Act
         var apiResult = result.MatchToMinimalApiResult(data => Results.Ok(data));
@@ -502,7 +502,7 @@ public class ResultExtensionsTests
     public void MatchToActionResult_WhenFailure_ShouldReturnDefaultProblem()
     {
         // Arrange
-        var result = Result.Failure<string>(Error.NotFound("Not found"));
+        var result = Result.Failure<string>(Error.NotFound(message: "Not found"));
 
         // Act
         var actionResult = result.MatchToActionResult(data => new OkObjectResult(data));
@@ -516,7 +516,7 @@ public class ResultExtensionsTests
     public void MatchToActionResult_WhenFailureWithCustomMapper_ShouldReturnCustomFailure()
     {
         // Arrange
-        var result = Result.Failure<string>(Error.NotFound("Not found"));
+        var result = Result.Failure<string>(Error.NotFound(message: "Not found"));
 
         // Act
         var actionResult = result.MatchToActionResult(
@@ -578,7 +578,7 @@ public class ResultExtensionsTests
     public async Task ToMinimalApiResultAsync_WhenFailure_ShouldReturnProblem()
     {
         // Arrange
-        var error = Error.NotFound("Resource not found");
+        var error = Error.NotFound(message: "Resource not found");
         var resultTask = Task.FromResult(Result.Failure(error));
 
         // Act
@@ -625,7 +625,7 @@ public class ResultExtensionsTests
     public async Task ToActionResultAsync_WhenFailure_ShouldReturnProblemDetails()
     {
         // Arrange
-        var error = Error.NotFound("Resource not found");
+        var error = Error.NotFound(message: "Resource not found");
         var resultTask = Task.FromResult(Result.Failure(error));
 
         // Act
