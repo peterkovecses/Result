@@ -46,12 +46,12 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 |---|---|---|---|
 | `Result.Success()` / `Success(data)` / `Success(metadata)` | `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | planned | planned |
 | `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | planned | planned |
-| Implicit conversions from `Error`, `Error[]` and data (`List<Error>` not shown) | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | planned | planned |
+| Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | planned | planned |
 | `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | planned | planned |
 | `Result.Combine` | `GetManyAsync`, `PlaceOrder`, `RestockBooks`, `ValidationDecorator` | planned | planned |
 | `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | planned | planned |
 | `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | planned | planned |
-| `Map`, `Ensure` (sync) | `Book`, `Order`, `GetBook`, `GetOrderSummary` | planned | planned |
+| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary`, `InMemoryBookRepository` | planned | planned |
 | `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` on `Task<Result<T>>` | `AddBook`, `ChangeBookPrice`, `RetireBook`, `GetOrder`, `PlaceOrder` | planned | planned |
 | `BindAsync` on `Result` and `Result<T>` instances | `RestockBooks`, `GetOrder`, `PlaceOrder` | planned | planned |
 | `EnsureAsync` with an async predicate | `RetireBook` | planned | planned |

@@ -1,5 +1,3 @@
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.GetOrder;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.GetOrderSummary;
 
 namespace Kovecses.Result.Sample.BookStore.Core.Tests.Features.Orders;
 

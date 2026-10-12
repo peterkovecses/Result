@@ -1,4 +1,3 @@
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.PlaceOrder;
 
 namespace Kovecses.Result.Sample.BookStore.Core.Tests.Features.Orders;
 
@@ -90,6 +89,27 @@ public class PlaceOrderHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ConcurrentOrdersForLastCopy_ShouldAllowOnlyOneOrder()
+    {
+        // Arrange
+        var books = new InMemoryBookRepository([TestData.Ddd(stock: 1)]);
+        var gateway = new StubPaymentGateway();
+        var handler = new PlaceOrderHandler(books, new InMemoryOrderRepository(), gateway, _user, TimeProvider.System, NullLogger<PlaceOrderHandler>.Instance);
+        var command = Order(new(TestData.DddIsbn, 1));
+
+        // Act
+        var results = await Task.WhenAll(handler.HandleAsync(command, default), handler.HandleAsync(command, default));
+
+        // Assert
+        Assert.Equal(1, results.Count(result => result.IsSuccess));
+        results.Single(result => result.IsFailure).Should().BeFailure()
+            .HaveError(BookErrors.Codes.InsufficientStock)
+            .HaveType(ErrorType.Conflict);
+        (await books.GetAsync(TestData.DddIsbn, default)).Should().BeSuccess()
+            .HaveData(book => book!.Stock == 0);
+    }
+
+    [Fact]
     public async Task HandleAsync_RetiredBook_ShouldReturnConflict()
     {
         // Arrange
@@ -106,22 +126,24 @@ public class PlaceOrderHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_PaymentDeclined_ShouldReturnFailureAndKeepStock()
+    public async Task HandleAsync_PaymentDeclined_ShouldRollbackReservation()
     {
         // Arrange
-        _gateway.Declines("Card declined.");
-        var command = Order(new(TestData.CleanCodeIsbn, 2));
+        _gateway.DeclinesOnce("Card declined.");
+        var command = Order(new(TestData.CleanCodeIsbn, 10));
 
         // Act
-        var result = await _sut.HandleAsync(command, default);
+        var firstAttempt = await _sut.HandleAsync(command, default);
+        var secondAttempt = await _sut.HandleAsync(command, default);
 
         // Assert
-        result.Should().BeFailure()
+        firstAttempt.Should().BeFailure()
             .HaveError(OrderErrors.Codes.PaymentDeclined)
             .HaveType(ErrorType.Failure)
             .HaveMessage("Card declined.");
+        secondAttempt.Should().BeSuccess();
         (await _books.GetAsync(TestData.CleanCodeIsbn, default)).Should().BeSuccess()
-            .HaveData(book => book!.Stock == 10);
+            .HaveData(book => book!.Stock == 0);
     }
 
     [Fact]

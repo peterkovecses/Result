@@ -1,9 +1,3 @@
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.AddBook;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.GetBook;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.RestockBooks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Kovecses.Result.Sample.BookStore.Core.Tests.Application;
 
@@ -105,10 +99,10 @@ public class CurrentUserExtensionsTests
     public void RequireUserId_SignedInUser_ShouldReturnUserId()
     {
         // Arrange
-        var sut = new TestCurrentUser("alice");
+        var _sut = new TestCurrentUser("alice");
 
         // Act
-        var result = sut.RequireUserId();
+        var result = _sut.RequireUserId();
 
         // Assert
         result.Should().BeSuccess()
@@ -119,10 +113,10 @@ public class CurrentUserExtensionsTests
     public void RequireUserId_AnonymousUser_ShouldReturnUnauthorized()
     {
         // Arrange
-        var sut = new TestCurrentUser(null);
+        var _sut = new TestCurrentUser(null);
 
         // Act
-        var result = sut.RequireUserId();
+        var result = _sut.RequireUserId();
 
         // Assert
         result.Should().BeFailure()

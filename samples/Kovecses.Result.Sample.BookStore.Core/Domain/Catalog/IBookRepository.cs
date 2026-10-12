@@ -1,5 +1,7 @@
 namespace Kovecses.Result.Sample.BookStore.Core.Domain.Catalog;
 
+public sealed record StockReservationRequest(string Isbn, int Quantity);
+
 public interface IBookRepository
 {
     /// <summary>Gets a book by ISBN, or a NotFound failure.</summary>
@@ -11,6 +13,16 @@ public interface IBookRepository
     Task<(IReadOnlyList<Book> Items, int TotalCount)> SearchAsync(string? term, int page, int pageSize, CancellationToken cancellationToken);
 
     Task SaveAsync(Book book, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Attempts to reserve stock for every requested line atomically. On failure, no stock is changed.
+    /// </summary>
+    Task<Result<IReadOnlyList<Book>>> TryReserveAsync(IReadOnlyList<StockReservationRequest> requests, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Releases previously reserved stock quantities.
+    /// </summary>
+    Task ReleaseAsync(IReadOnlyList<StockReservationRequest> requests, CancellationToken cancellationToken);
 }
 
 public static class BookRepositoryExtensions

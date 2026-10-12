@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 
 namespace Kovecses.Result.Sample.BookStore.Core.Infrastructure;
 

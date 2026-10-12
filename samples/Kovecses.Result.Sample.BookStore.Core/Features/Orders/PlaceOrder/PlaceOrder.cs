@@ -28,7 +28,9 @@ public sealed class PlaceOrderHandler(
     TimeProvider timeProvider,
     ILogger<PlaceOrderHandler> logger) : IRequestHandler<PlaceOrderCommand, Result<OrderDto>>
 {
-    private sealed record StockReservation(IReadOnlyList<Book> Books, IReadOnlyList<OrderLine> Lines)
+    private sealed record StockReservation(
+        IReadOnlyList<StockReservationRequest> Requests,
+        IReadOnlyList<OrderLine> Lines)
     {
         public decimal Total => Lines.Sum(line => line.Total);
     }
@@ -47,44 +49,73 @@ public sealed class PlaceOrderHandler(
         return placed;
     }
 
-    private Task<Result<OrderDto>> PlaceAsync(string customerId, PlaceOrderCommand request, CancellationToken cancellationToken)
-        => ReserveStockAsync(request, cancellationToken)
-            .BindAsync(reservation => ChargeAsync(customerId, reservation, cancellationToken))
-            .BindAsync(paid => PersistAsync(customerId, paid, cancellationToken))
-            .MapAsync(order => OrderDto.From(order));
+    private async Task<Result<OrderDto>> PlaceAsync(string customerId, PlaceOrderCommand request, CancellationToken cancellationToken)
+    {
+        var reservation = await ReserveStockAsync(request, cancellationToken);
+
+        if (reservation.IsFailure)
+        {
+            return reservation.Errors!;
+        }
+
+        var reservedStock = reservation.ValueOrThrow();
+        var paid = await ChargeAsync(customerId, reservedStock, cancellationToken);
+
+        if (paid.IsFailure)
+        {
+            await books.ReleaseAsync(reservedStock.Requests, cancellationToken);
+            return paid.Errors!;
+        }
+
+        var persisted = await PersistAsync(customerId, paid.ValueOrThrow(), cancellationToken);
+
+        if (persisted.IsFailure)
+        {
+            await books.ReleaseAsync(reservedStock.Requests, cancellationToken);
+            return persisted.Errors!;
+        }
+
+        return persisted.Map(OrderDto.From);
+    }
 
     // Every missing book and every shortage is reported, not just the first one.
     private async Task<Result<StockReservation>> ReserveStockAsync(PlaceOrderCommand request, CancellationToken cancellationToken)
     {
-        var loaded = await books.GetManyAsync(request.Lines.Select(line => line.Isbn), cancellationToken);
+        var stockRequests = request.Lines
+            .Select(line => new StockReservationRequest(line.Isbn, line.Quantity))
+            .ToList();
 
-        if (loaded.IsFailure)
-        {
-            return loaded.Errors!;
-        }
+        return (await books.TryReserveAsync(stockRequests, cancellationToken))
+            .Bind(reservedBooks => CreateReservation(stockRequests, request.Lines, reservedBooks));
+    }
 
-        var catalog = loaded.ValueOrThrow();
-        var reservations = catalog.Zip(request.Lines, (book, line) => book.Reserve(line.Quantity)).ToArray();
+    private static Result<StockReservation> CreateReservation(
+        IReadOnlyList<StockReservationRequest> stockRequests,
+        IReadOnlyList<OrderItem> requestedLines,
+        IReadOnlyList<Book> reservedBooks)
+    {
+        var quantitiesByIsbn = requestedLines.ToDictionary(line => line.Isbn, line => line.Quantity, StringComparer.OrdinalIgnoreCase);
 
-        return Result.Combine(reservations).Match(
-            () => Result.Success(new StockReservation(
-                reservations.Select(reservation => reservation.ValueOrThrow()).ToList(),
-                catalog.Zip(request.Lines, (book, line) => new OrderLine(book.Isbn, book.Title, book.Price, line.Quantity)).ToList())),
-            errors => Result.Failure<StockReservation>(errors));
+        var lines = reservedBooks
+            .Select(book => new OrderLine(book.Isbn, book.Title, book.Price, quantitiesByIsbn[book.Isbn]))
+            .ToList();
+
+        return Result.Success(new StockReservation(stockRequests, lines));
     }
 
     private async Task<Result<PaidReservation>> ChargeAsync(string customerId, StockReservation reservation, CancellationToken cancellationToken)
     {
         var charge = await ChargeSafelyAsync(new PaymentRequest(customerId, reservation.Total), cancellationToken);
 
-        return charge.MatchFirst(
-            receipt => Result.Success(new PaidReservation(reservation, receipt)),
-            error =>
-            {
-                logger.LogInformation("Payment for {CustomerId} failed: {Reason}", customerId, charge.FirstErrorMessage);
+        if (charge.IsFailure)
+        {
+            logger.LogInformation("Payment for {CustomerId} failed: {Reason}", customerId, charge.FirstErrorMessage);
+            return charge.Errors!;
+        }
 
-                return Result.Failure<PaidReservation>(error);
-            });
+        return charge
+            .Tap(_ => logger.LogInformation("Payment for {CustomerId} was accepted.", customerId))
+            .Bind(receipt => Result.Success(new PaidReservation(reservation, receipt)));
     }
 
     // Declines come back as failed results, infrastructure problems are exceptions that we translate here.
@@ -112,13 +143,5 @@ public sealed class PlaceOrderHandler(
 
     private Task<Result<Order>> PersistAsync(string customerId, PaidReservation paid, CancellationToken cancellationToken)
         => Order.Place(customerId, paid.Reservation.Lines, paid.Receipt.Reference, timeProvider.GetUtcNow())
-            .TapAsync(async order =>
-            {
-                foreach (var book in paid.Reservation.Books)
-                {
-                    await books.SaveAsync(book, cancellationToken);
-                }
-
-                await orders.SaveAsync(order, cancellationToken);
-            });
+            .TapAsync(order => orders.SaveAsync(order, cancellationToken));
 }

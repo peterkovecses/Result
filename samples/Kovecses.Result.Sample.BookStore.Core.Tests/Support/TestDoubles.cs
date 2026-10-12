@@ -28,6 +28,24 @@ public sealed class StubPaymentGateway : IPaymentGateway
         return this;
     }
 
+    public StubPaymentGateway DeclinesOnce(string reason)
+    {
+        var wasDeclined = false;
+
+        _behavior = _ =>
+        {
+            if (!wasDeclined)
+            {
+                wasDeclined = true;
+                return Task.FromResult(Result.Failure<PaymentReceipt>(OrderErrors.Codes.PaymentDeclined, reason, ErrorType.Failure));
+            }
+
+            return Task.FromResult<Result<PaymentReceipt>>(new PaymentReceipt("pay_test"));
+        };
+
+        return this;
+    }
+
     public Task<Result<PaymentReceipt>> ChargeAsync(PaymentRequest request, CancellationToken cancellationToken)
     {
         Charges.Add(request);

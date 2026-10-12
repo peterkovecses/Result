@@ -1,17 +1,3 @@
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.AddBook;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.ChangeBookPrice;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.GetBook;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.RestockBooks;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.RetireBook;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.SearchBooks;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.CancelOrder;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.GetOrder;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.GetOrderSummary;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.PlaceOrder;
-using Kovecses.Result.Sample.BookStore.Core.Infrastructure;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Kovecses.Result.Sample.BookStore.Core;
 

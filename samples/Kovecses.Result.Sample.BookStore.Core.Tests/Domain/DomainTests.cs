@@ -17,10 +17,10 @@ public class BookTests
     public void Reserve_MoreThanInStock_ShouldReturnConflictWithMetadata()
     {
         // Arrange
-        var sut = TestData.CleanCode(stock: 2);
+        var _sut = TestData.CleanCode(stock: 2);
 
         // Act
-        var result = sut.Reserve(5);
+        var result = _sut.Reserve(5);
 
         // Assert
         result.Should().BeFailure()
@@ -35,10 +35,10 @@ public class BookTests
     public void Reserve_WithinStock_ShouldDecreaseStock()
     {
         // Arrange
-        var sut = TestData.CleanCode(stock: 5);
+        var _sut = TestData.CleanCode(stock: 5);
 
         // Act
-        var result = sut.Reserve(2);
+        var result = _sut.Reserve(2);
 
         // Assert
         result.Should().BeSuccess()
@@ -49,10 +49,10 @@ public class BookTests
     public void Restock_NonPositiveQuantity_ShouldReturnFailure()
     {
         // Arrange
-        var sut = TestData.CleanCode();
+        var _sut = TestData.CleanCode();
 
         // Act
-        var result = sut.Restock(0);
+        var result = _sut.Restock(0);
 
         // Assert
         result.Should().BeFailure()
@@ -63,10 +63,10 @@ public class BookTests
     public void Retire_AlreadyRetiredBook_ShouldReturnConflict()
     {
         // Arrange
-        var sut = TestData.CleanCode() with { IsRetired = true };
+        var _sut = TestData.CleanCode() with { IsRetired = true };
 
         // Act
-        var result = sut.Retire();
+        var result = _sut.Retire();
 
         // Assert
         result.Should().BeFailure()
@@ -92,10 +92,10 @@ public class OrderTests
     public void Cancel_OpenOrder_ShouldMarkOrderCancelled()
     {
         // Arrange
-        var sut = TestData.OrderFor("alice", TestData.LineOf(TestData.CleanCode(), 1));
+        var _sut = TestData.OrderFor("alice", TestData.LineOf(TestData.CleanCode(), 1));
 
         // Act
-        var result = sut.Cancel();
+        var result = _sut.Cancel();
 
         // Assert
         result.Should().BeSuccess()
@@ -106,10 +106,10 @@ public class OrderTests
     public void Cancel_CancelledOrder_ShouldReturnConflict()
     {
         // Arrange
-        var sut = TestData.OrderFor("alice", TestData.LineOf(TestData.CleanCode(), 1)).Cancel().ValueOrThrow();
+        var _sut = TestData.OrderFor("alice", TestData.LineOf(TestData.CleanCode(), 1)).Cancel().ValueOrThrow();
 
         // Act
-        var result = sut.Cancel();
+        var result = _sut.Cancel();
 
         // Assert
         result.Should().BeFailure()

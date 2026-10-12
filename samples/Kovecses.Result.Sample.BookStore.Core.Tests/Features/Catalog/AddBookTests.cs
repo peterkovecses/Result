@@ -1,4 +1,3 @@
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.AddBook;
 
 namespace Kovecses.Result.Sample.BookStore.Core.Tests.Features.Catalog;
 
