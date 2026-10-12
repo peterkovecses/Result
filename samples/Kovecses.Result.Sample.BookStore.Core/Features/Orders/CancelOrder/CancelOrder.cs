@@ -12,15 +12,21 @@ public sealed class CancelOrderHandler(IOrderRepository orders, IBookRepository 
 
     private async Task<Result> CancelAsync(string userId, Guid orderId, CancellationToken cancellationToken)
     {
-        var cancelled = await orders.GetAsync(orderId, cancellationToken)
-            .EnsureAsync(order => order.CustomerId == userId, OrderErrors.NotOwner())
-            .BindAsync(order => order.Cancel());
+        var loaded = await orders.GetAsync(orderId, cancellationToken)
+            .EnsureAsync(order => order.CustomerId == userId, OrderErrors.NotOwner());
+
+        var cancelled = loaded.Bind(order => order.Cancel());
 
         return await cancelled.MatchFirstAsync(
             async order =>
             {
+                // Only the caller that wins the replace releases the stock, so concurrent cancellations cannot release it twice.
+                if (!await orders.TryReplaceAsync(loaded.ValueOrThrow(), order, cancellationToken))
+                {
+                    return Result.Failure(OrderErrors.AlreadyCancelled(order.Id));
+                }
+
                 await ReleaseStockAsync(order, cancellationToken);
-                await orders.SaveAsync(order, cancellationToken);
 
                 return Result.Success(new Dictionary<string, object> { ["refundAmount"] = order.Total });
             },

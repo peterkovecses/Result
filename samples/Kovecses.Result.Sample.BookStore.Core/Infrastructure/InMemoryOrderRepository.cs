@@ -19,4 +19,7 @@ public sealed class InMemoryOrderRepository : IOrderRepository
 
         return Task.CompletedTask;
     }
+
+    public Task<bool> TryReplaceAsync(Order current, Order updated, CancellationToken cancellationToken)
+        => Task.FromResult(_orders.TryUpdate(current.Id, updated, current));
 }

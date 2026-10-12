@@ -8,4 +8,7 @@ public interface IOrderRepository
     Task<bool> HasOpenOrdersForAsync(string isbn, CancellationToken cancellationToken);
 
     Task SaveAsync(Order order, CancellationToken cancellationToken);
+
+    /// <summary>Replaces <paramref name="current"/> with <paramref name="updated"/> only if it is still the stored version.</summary>
+    Task<bool> TryReplaceAsync(Order current, Order updated, CancellationToken cancellationToken);
 }

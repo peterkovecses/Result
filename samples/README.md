@@ -48,7 +48,7 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 | `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | planned | planned |
 | Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | planned | planned |
 | `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | planned | planned |
-| `Result.Combine` | `GetManyAsync`, `PlaceOrder`, `RestockBooks`, `ValidationDecorator` | planned | planned |
+| `Result.Combine` | `GetManyAsync`, `RestockBooks`, `ValidationDecorator` | planned | planned |
 | `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | planned | planned |
 | `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | planned | planned |
 | `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary` | planned | planned |
@@ -57,7 +57,7 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 | `EnsureAsync` with an async predicate | `RetireBook` | planned | planned |
 | `ValueOrThrow` | `BookSeedData`, `GetManyAsync`, `PlaceOrder`, `RestockBooks` | planned | planned |
 | `ValueOrDefault` | `GetOrderSummary` | planned | planned |
-| `ToResult` / `ToResult(data)` | `RetireBook`, `RestockBooks` | planned | planned |
+| `ToResult` (`Result<T>` to `Result`) | `RetireBook`, `RestockBooks` | planned | planned |
 | `JoinErrorMessages` | `PlaceOrder`, `RestockBooks` | planned | planned |
 | `FirstErrorMessage` | `PlaceOrder` | planned | planned |
 | Success and error metadata | `RestockBooks`, `CancelOrder` (success); `BookErrors.InsufficientStock`, `ValidationErrors` (error) | planned | planned |

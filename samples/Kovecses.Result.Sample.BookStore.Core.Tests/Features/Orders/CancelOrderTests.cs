@@ -97,4 +97,20 @@ public class CancelOrderHandlerTests
         (await _books.GetAsync(TestData.CleanCodeIsbn, default)).Should().BeSuccess()
             .HaveData(book => book!.Stock == 10);
     }
+
+    [Fact]
+    public async Task HandleAsync_ConcurrentCancellations_ShouldRestoreStockOnlyOnce()
+    {
+        // Arrange
+        var order = await SaveOrderAsync("alice");
+        var command = new CancelOrderCommand(order.Id);
+
+        // Act
+        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(() => _sut.HandleAsync(command, default))));
+
+        // Assert
+        Assert.Single(results, result => result.IsSuccess);
+        (await _books.GetAsync(TestData.CleanCodeIsbn, default)).Should().BeSuccess()
+            .HaveData(book => book!.Stock == 10);
+    }
 }
