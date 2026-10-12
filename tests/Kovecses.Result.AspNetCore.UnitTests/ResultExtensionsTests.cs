@@ -136,7 +136,7 @@ public class ResultExtensionsTests
     public void ToMinimalApiResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
     {
         // Arrange
-        var error = Error.Custom("Code", "Message", errorType);
+        var error = new Error("Code", "Message", errorType);
         var result = Result.Failure(error);
 
         // Act
@@ -288,7 +288,7 @@ public class ResultExtensionsTests
     public void ToActionResult_StatusMapping_ShouldReturnCorrectStatusCode(ErrorType errorType, int expectedStatusCode)
     {
         // Arrange
-        var error = Error.Custom("Code", "Message", errorType);
+        var error = new Error("Code", "Message", errorType);
         var result = Result.Failure(error);
 
         // Act
