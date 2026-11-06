@@ -44,7 +44,7 @@ var changed = error with { Code = " " };
 var changedMessage = error with { Message = null! };
 
 // Now throws ArgumentException for the empty/whitespace code.
-// The invalid with expressions now throw argument exceptions.
+// `with { Code = " " }` throws ArgumentException; a null code or message throws ArgumentNullException.
 
 // Before: invalid payloads were deserialized with fallback values.
 var fallback = JsonSerializer.Deserialize<Error>("{}");
@@ -55,7 +55,7 @@ var valid = JsonSerializer.Deserialize<Error>(
 // Deserializing {"message":"Invalid input"} now throws JsonException.
 ```
 
-Provide a valid code and message before constructing, updating, or deserializing an `Error`. See [PR #11](https://github.com/peterkovecses/Result/pull/11).
+The `Result.Failure(...)` overloads that take a code and message surface the same exceptions. Provide a valid code and message before constructing, updating, or deserializing an `Error`. See [PR #11](https://github.com/peterkovecses/Result/pull/11).
 
 ## Samples and Documentation
 
