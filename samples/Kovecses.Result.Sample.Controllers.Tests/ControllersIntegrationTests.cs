@@ -1,24 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using Kovecses.Result;
-using Kovecses.Result.FluentAssertions;
-using Kovecses.Result.Sample.BookStore.Core.Application;
-using Kovecses.Result.Sample.BookStore.Core.Domain.Orders;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.AddBook;
-using Kovecses.Result.Sample.BookStore.Core.Features.Catalog.RestockBooks;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.GetOrderSummary;
-using Kovecses.Result.Sample.BookStore.Core.Features.Orders.PlaceOrder;
-using Kovecses.Result.Sample.Controllers.Controllers;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Xunit;
-
 namespace Kovecses.Result.Sample.Controllers.Tests;
 
 public sealed class ControllersIntegrationTests : IAsyncLifetime
@@ -46,10 +25,15 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetBook_Existing_ShouldReturnBook()
+    public async Task GetBook_WhenBookExists_ShouldReturnBook()
     {
-        var response = await _client.GetAsync($"/books/{CleanCodeIsbn}");
+        // Arrange
+        var uri = $"/books/{CleanCodeIsbn}";
 
+        // Act
+        var response = await _client.GetAsync(uri);
+
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var book = await response.Content.ReadFromJsonAsync<BookDto>();
         Assert.NotNull(book);
@@ -57,18 +41,28 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetBook_Missing_ShouldReturnNotFound()
+    public async Task GetBook_WhenBookIsMissing_ShouldReturnNotFound()
     {
-        var response = await _client.GetAsync("/books/9999999999999");
+        // Arrange
+        const string uri = "/books/9999999999999";
 
+        // Act
+        var response = await _client.GetAsync(uri);
+
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task SearchBooks_ValidQuery_ShouldReturnPage()
+    public async Task SearchBooks_WhenQueryIsValid_ShouldReturnPage()
     {
-        var response = await _client.GetAsync("/books?term=clean&page=1&pageSize=10");
+        // Arrange
+        const string uri = "/books?term=clean&page=1&pageSize=10";
 
+        // Act
+        var response = await _client.GetAsync(uri);
+
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var page = await response.Content.ReadFromJsonAsync<PagedResult<BookDto>>();
         Assert.NotNull(page);
@@ -76,20 +70,30 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task SearchBooks_InvalidPage_ShouldReturnValidationProblem()
+    public async Task SearchBooks_WhenPageIsInvalid_ShouldReturnValidationProblem()
     {
-        var response = await _client.GetAsync("/books?page=0");
+        // Arrange
+        const string uri = "/books?page=0";
 
+        // Act
+        var response = await _client.GetAsync(uri);
+
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(problem.GetProperty("errors").TryGetProperty("Page", out _));
     }
 
     [Fact]
-    public async Task AddBook_ValidCommand_ShouldReturnCreatedBook()
+    public async Task AddBook_WhenCommandIsValid_ShouldReturnCreatedBook()
     {
-        var response = await _client.PostAsJsonAsync("/books", NewBookCommand());
+        // Arrange
+        var command = NewBookCommand();
 
+        // Act
+        var response = await _client.PostAsJsonAsync("/books", command);
+
+        // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var book = await response.Content.ReadFromJsonAsync<BookDto>();
         Assert.NotNull(book);
@@ -98,18 +102,28 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AddBook_DuplicateIsbn_ShouldReturnConflict()
+    public async Task AddBook_WhenIsbnAlreadyExists_ShouldReturnConflict()
     {
-        var response = await _client.PostAsJsonAsync("/books", NewBookCommand(CleanCodeIsbn));
+        // Arrange
+        var command = NewBookCommand(CleanCodeIsbn);
 
+        // Act
+        var response = await _client.PostAsJsonAsync("/books", command);
+
+        // Assert
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]
-    public async Task AddBook_InvalidFields_ShouldMapValidationMetadata()
+    public async Task AddBook_WhenFieldsAreInvalid_ShouldMapValidationMetadata()
     {
-        var response = await _client.PostAsJsonAsync("/books", new AddBookCommand("", "", "", 0, -1));
+        // Arrange
+        var command = new AddBookCommand("", "", "", 0, -1);
 
+        // Act
+        var response = await _client.PostAsJsonAsync("/books", command);
+
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -120,10 +134,15 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ChangeBookPrice_ValidPrice_ShouldReturnUpdatedBook()
+    public async Task ChangeBookPrice_WhenPriceIsValid_ShouldReturnUpdatedBook()
     {
-        var response = await _client.PutAsJsonAsync($"/books/{CleanCodeIsbn}/price", new ChangeBookPriceRequest(45m));
+        // Arrange
+        var request = new ChangeBookPriceRequest(45m);
 
+        // Act
+        var response = await _client.PutAsJsonAsync($"/books/{CleanCodeIsbn}/price", request);
+
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var book = await response.Content.ReadFromJsonAsync<BookDto>();
         Assert.NotNull(book);
@@ -131,68 +150,96 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ChangeBookPrice_NonPositivePrice_ShouldReturnValidationProblem()
+    public async Task ChangeBookPrice_WhenPriceIsNonPositive_ShouldReturnValidationProblem()
     {
-        var response = await _client.PutAsJsonAsync($"/books/{CleanCodeIsbn}/price", new ChangeBookPriceRequest(0));
+        // Arrange
+        var request = new ChangeBookPriceRequest(0);
 
+        // Act
+        var response = await _client.PutAsJsonAsync($"/books/{CleanCodeIsbn}/price", request);
+
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task RestockBook_ValidItems_ShouldReturnCountHeader()
+    public async Task RestockBook_WhenItemsAreValid_ShouldReturnCountHeader()
     {
+        // Arrange
         var command = new RestockBooksCommand([new RestockItem(CleanCodeIsbn, 3)]);
 
+        // Act
         var response = await _client.PostAsJsonAsync("/books/restock", command);
 
+        // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.Equal("1", response.Headers.GetValues("X-Restocked-Books").Single());
     }
 
     [Fact]
-    public async Task RestockBook_UnknownIsbn_ShouldReturnNotFound()
+    public async Task RestockBook_WhenIsbnIsUnknown_ShouldReturnNotFound()
     {
+        // Arrange
         var command = new RestockBooksCommand([new RestockItem("9999999999999", 3)]);
 
+        // Act
         var response = await _client.PostAsJsonAsync("/books/restock", command);
 
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task RetireBook_ExistingBook_ShouldReturnNoContent()
+    public async Task RetireBook_WhenBookExists_ShouldReturnNoContent()
     {
-        var response = await _client.DeleteAsync("/books/9780134494166");
+        // Arrange
+        const string uri = "/books/9780134494166";
 
+        // Act
+        var response = await _client.DeleteAsync(uri);
+
+        // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
-    public async Task RetireBook_MissingBook_ShouldReturnNotFound()
+    public async Task RetireBook_WhenBookIsMissing_ShouldReturnNotFound()
     {
-        var response = await _client.DeleteAsync("/books/9999999999999");
+        // Arrange
+        const string uri = "/books/9999999999999";
 
+        // Act
+        var response = await _client.DeleteAsync(uri);
+
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task RetireBook_WithOpenOrder_ShouldMapFailureType()
+    public async Task RetireBook_WhenBookHasOpenOrder_ShouldMapFailureType()
     {
+        // Arrange
         SetCustomer("alice");
         await CreateOrderAsync();
 
+        // Act
         var response = await _client.DeleteAsync($"/books/{CleanCodeIsbn}");
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task PlaceOrder_ValidOrder_ShouldReturnCreatedOrder()
+    public async Task PlaceOrder_WhenOrderIsValid_ShouldReturnCreatedOrder()
     {
+        // Arrange
         SetCustomer("alice");
+        var command = NewOrderCommand();
 
-        var response = await _client.PostAsJsonAsync("/orders", NewOrderCommand());
+        // Act
+        var response = await _client.PostAsJsonAsync("/orders", command);
 
+        // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var order = await response.Content.ReadFromJsonAsync<OrderDto>();
         Assert.NotNull(order);
@@ -201,24 +248,34 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task PlaceOrder_AnonymousCustomer_ShouldReturnUnauthorized()
+    public async Task PlaceOrder_WhenCustomerIsAnonymous_ShouldReturnUnauthorized()
     {
-        var response = await _client.PostAsJsonAsync("/orders", NewOrderCommand());
+        // Arrange
+        var command = NewOrderCommand();
 
+        // Act
+        var response = await _client.PostAsJsonAsync("/orders", command);
+
+        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task PlaceOrder_DeclinedPayment_ShouldReturnPaymentRequired()
+    public async Task PlaceOrder_WhenPaymentIsDeclined_ShouldReturnPaymentRequired()
     {
+        // Arrange
         SetCustomer("alice");
         var bookResponse = await _client.PostAsJsonAsync(
             "/books",
             new AddBookCommand("9780000000002", "Expensive Book", "Sample Author", 1_001m, 1));
         Assert.Equal(HttpStatusCode.Created, bookResponse.StatusCode);
 
-        var response = await _client.PostAsJsonAsync("/orders", NewOrderCommand("9780000000002"));
+        var command = NewOrderCommand("9780000000002");
 
+        // Act
+        var response = await _client.PostAsJsonAsync("/orders", command);
+
+        // Assert
         Assert.Equal(HttpStatusCode.PaymentRequired, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Payment declined", problem.GetProperty("title").GetString());
@@ -228,25 +285,32 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     [InlineData("timeout", HttpStatusCode.RequestTimeout)]
     [InlineData("canceled", HttpStatusCode.BadRequest)]
     [InlineData("unexpected", HttpStatusCode.InternalServerError)]
-    public async Task PlaceOrder_GatewayError_ShouldMapErrorType(string errorName, HttpStatusCode expectedStatus)
+    public async Task PlaceOrder_WhenGatewayReturnsError_ShouldMapErrorType(string errorName, HttpStatusCode expectedStatus)
     {
+        // Arrange
         using var factory = new PaymentErrorFactory(CreatePaymentError(errorName));
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(CustomerHeader, "alice");
+        var command = NewOrderCommand();
 
-        var response = await client.PostAsJsonAsync("/orders", NewOrderCommand());
+        // Act
+        var response = await client.PostAsJsonAsync("/orders", command);
 
+        // Assert
         Assert.Equal(expectedStatus, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetOrder_OwnedOrder_ShouldReturnOrder()
+    public async Task GetOrder_WhenOrderIsOwnedByCustomer_ShouldReturnOrder()
     {
+        // Arrange
         SetCustomer("alice");
         var orderId = await CreateOrderAsync();
 
+        // Act
         var response = await _client.GetAsync($"/orders/{orderId}");
 
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var order = await response.Content.ReadFromJsonAsync<OrderDto>();
         Assert.NotNull(order);
@@ -254,46 +318,59 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetOrder_NotOwnedOrder_ShouldReturnForbidden()
+    public async Task GetOrder_WhenOrderIsOwnedByAnotherCustomer_ShouldReturnForbidden()
     {
+        // Arrange
         SetCustomer("alice");
         var orderId = await CreateOrderAsync();
         SetCustomer("bob");
 
+        // Act
         var response = await _client.GetAsync($"/orders/{orderId}");
 
+        // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
-    public async Task CancelOrder_OwnedOrder_ShouldReturnNoContent()
+    public async Task CancelOrder_WhenOrderIsOwnedByCustomer_ShouldReturnNoContent()
     {
+        // Arrange
         SetCustomer("alice");
         var orderId = await CreateOrderAsync();
 
+        // Act
         var response = await _client.PostAsync($"/orders/{orderId}/cancel", content: null);
 
+        // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
-    public async Task CancelOrder_MissingOrder_ShouldReturnNotFound()
+    public async Task CancelOrder_WhenOrderIsMissing_ShouldReturnNotFound()
     {
+        // Arrange
         SetCustomer("alice");
+        var orderId = Guid.NewGuid();
 
-        var response = await _client.PostAsync($"/orders/{Guid.NewGuid()}/cancel", content: null);
+        // Act
+        var response = await _client.PostAsync($"/orders/{orderId}/cancel", content: null);
 
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetOrderSummary_OwnedOrder_ShouldReturnSummary()
+    public async Task GetOrderSummary_WhenOrderIsOwnedByCustomer_ShouldReturnSummary()
     {
+        // Arrange
         SetCustomer("alice");
         var orderId = await CreateOrderAsync();
 
+        // Act
         var response = await _client.GetAsync($"/orders/{orderId}/summary");
 
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var summary = await response.Content.ReadFromJsonAsync<OrderSummary>();
         Assert.NotNull(summary);
@@ -301,23 +378,30 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetOrderSummary_MissingOrder_ShouldReturnNotFound()
+    public async Task GetOrderSummary_WhenOrderIsMissing_ShouldReturnNotFound()
     {
+        // Arrange
         SetCustomer("alice");
+        var orderId = Guid.NewGuid();
 
-        var response = await _client.GetAsync($"/orders/{Guid.NewGuid()}/summary");
+        // Act
+        var response = await _client.GetAsync($"/orders/{orderId}/summary");
 
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetInternalOrder_ExistingOrder_ShouldReturnWrappedResult()
+    public async Task GetInternalOrder_WhenOrderExists_ShouldReturnWrappedResult()
     {
+        // Arrange
         SetCustomer("alice");
         var orderId = await CreateOrderAsync();
 
+        // Act
         var response = await _client.GetAsync($"/internal/orders/{orderId}");
 
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<Result<OrderDto>>();
         Assert.NotNull(result);
@@ -326,12 +410,16 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetInternalOrder_MissingOrder_ShouldReturnWrappedFailure()
+    public async Task GetInternalOrder_WhenOrderIsMissing_ShouldReturnWrappedFailure()
     {
+        // Arrange
         SetCustomer("alice");
+        var orderId = Guid.NewGuid();
 
-        var response = await _client.GetAsync($"/internal/orders/{Guid.NewGuid()}");
+        // Act
+        var response = await _client.GetAsync($"/internal/orders/{orderId}");
 
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<Result<OrderDto>>();
         Assert.NotNull(result);
