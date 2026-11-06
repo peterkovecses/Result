@@ -8,9 +8,7 @@ Two realistic applications that together demonstrate every feature of the Result
 | `Kovecses.Result.Sample.BookStore.Core.Tests` | Unit tests for every handler, validator and the domain | done |
 | MinimalApi host | Minimal API on top of the Core, handlers injected directly | done |
 | `Kovecses.Result.Sample.MinimalApi.Tests` | Minimal API integration tests, including HTTP status mapping and wrapped-result JSON round trips | done |
-| Controllers host | Thin controllers on top of the Core, via `IMediator` | planned |
-
-> The older Employee Core, Controllers and Tests projects still exist and will be removed after both new hosts are in place.
+| Controllers host | Thin controllers on top of the Core, via `IMediator` | done |
 
 ## BookStore Core
 
@@ -41,7 +39,7 @@ Features/        Catalog/{GetBook, SearchBooks, AddBook, ChangeBookPrice, Restoc
 
 ## Feature coverage matrix
 
-Core points to the file in `BookStore.Core` that shows the feature. The host columns are filled in by the host migration tickets.
+Each row points to at least one place in the new samples that demonstrates the feature. Core entries point to files in `BookStore.Core`; host entries point to their Minimal API or Controllers examples. A dash means the feature is demonstrated in the Core and is not host-specific.
 
 | Library feature | Core | MinimalApi | Controllers |
 |---|---|---|---|
