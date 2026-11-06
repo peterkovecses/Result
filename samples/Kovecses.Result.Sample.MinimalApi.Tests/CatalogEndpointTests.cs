@@ -160,6 +160,38 @@ public sealed class CatalogEndpointTests(BookStoreApplicationFactory factory)
     }
 
     [Fact]
+    public async Task RestockBooks_WhenItemIsNull_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        var command = new { Items = new object?[] { null } };
+
+        // Act
+        using var response = await _client.PostAsJsonAsync("/api/catalog/books/restock", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("Every item is required.", problem.GetProperty("errors").GetProperty("Items")
+            .EnumerateArray().Select(message => message.GetString()));
+    }
+
+    [Fact]
+    public async Task RestockBooks_WhenIsbnIsNull_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        var command = new { Items = new[] { new { Isbn = (string?)null, Quantity = 1 } } };
+
+        // Act
+        using var response = await _client.PostAsJsonAsync("/api/catalog/books/restock", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("Every item needs an ISBN.", problem.GetProperty("errors").GetProperty("Items")
+            .EnumerateArray().Select(message => message.GetString()));
+    }
+
+    [Fact]
     public async Task RetireBook_WhenBookHasNoOpenOrders_ShouldReturnNoContent()
     {
         // Arrange

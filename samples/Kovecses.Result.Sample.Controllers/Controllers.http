@@ -1,72 +1,77 @@
 @Host = http://localhost:5106
 
-### 1. Get Employee - Success (Standard REST)
-# Returns 200 OK with the employee data directly
-GET {{Host}}/employees/1
+### Get a book
+# Returns the book DTO, or ProblemDetails when the ISBN is unknown.
+GET {{Host}}/books/9780132350884
 
-### 2. Get Employee - Success (Wrapped Result)
-# Returns 200 OK with the full Result object
-GET {{Host}}/employees/1/wrapped
+### Search the catalog
+GET {{Host}}/books?term=clean&page=1&pageSize=10
 
-### 3. Get Employee - Not Found (Standard REST)
-# Returns 404 Not Found as a standard ProblemDetails object
-GET {{Host}}/employees/99
-
-### 4. Create Employee - Success
-# Returns 201 Created with the new employee data
-POST {{Host}}/employees
+### Add a book
+# Returns 201 Created with a Location header.
+POST {{Host}}/books
 Content-Type: application/json
 
 {
-  "fullName": "Alice Cooper",
-  "position": "Lead Singer"
+  "isbn": "9780000000001",
+  "title": "A Sample Book",
+  "author": "Sample Author",
+  "price": 12.50,
+  "initialStock": 4
 }
 
-### 5. Create Employee - Validation Error (Multiple errors for FullName: Too short and no space)
-# Returns 400 Bad Request with Validation ProblemDetails
-POST {{Host}}/employees
+### Invalid book fields
+# Returns 400 ValidationProblemDetails with field-level errors.
+POST {{Host}}/books
 Content-Type: application/json
 
 {
-  "fullName": "Jo",
-  "position": "Intern"
+  "isbn": "",
+  "title": "",
+  "author": "",
+  "price": 0,
+  "initialStock": -1
 }
 
-### 6. Create Employee - Conflict Error
-# Returns 409 Conflict with standard ProblemDetails
-POST {{Host}}/employees
+### Change a book price
+PUT {{Host}}/books/9780132350884/price
 Content-Type: application/json
 
 {
-  "fullName": "The Boss",
-  "position": "Duplicate"
+  "newPrice": 45
 }
 
-### 7. Create Employee - Multiple Validation Errors (Combine Demo)
-# Returns 400 Bad Request with all validation errors in the body
-POST {{Host}}/employees
+### Restock a book
+# Returns 204 and an X-Restocked-Books response header.
+POST {{Host}}/books/restock
 Content-Type: application/json
 
 {
-  "fullName": "",
-  "position": ""
+  "items": [
+    { "isbn": "9780132350884", "quantity": 3 }
+  ]
 }
 
-### 8. Update Employee - Success (Returns DTO + Custom Metadata Header)
-# Returns 200 OK with EmployeeDto and 'X-Audit-Time' header
-PUT {{Host}}/employees/2
+### Retire a book
+DELETE {{Host}}/books/9780134494166
+
+### Place an order
+# Set X-Customer-Id to select the current customer.
+POST {{Host}}/orders
+X-Customer-Id: alice
 Content-Type: application/json
 
 {
-  "id": 2,
-  "fullName": "Jane Senior",
-  "position": "Senior Product Manager"
+  "lines": [
+    { "isbn": "9780132350884", "quantity": 1 }
+  ]
 }
 
-### 9. Delete Employee - Business Rule Violation (Custom Code: Employee.CannotDeleteBoss)
-# Returns 400 Bad Request (ErrorType.Failure) with custom message and code
-DELETE {{Host}}/employees/1
+### Read an order (replace the id with the one from the response Location header)
+GET {{Host}}/orders/00000000-0000-0000-0000-000000000000
+X-Customer-Id: alice
 
-### 10. Delete Employee - Success
-# Returns 204 No Content on success
-DELETE {{Host}}/employees/2
+### Read an order through the internal typed-client route
+# Returns the full Result<OrderDto> response.
+GET {{Host}}/internal/orders/00000000-0000-0000-0000-000000000000
+X-Customer-Id: alice

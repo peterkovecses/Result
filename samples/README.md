@@ -45,25 +45,25 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 
 | Library feature | Core | MinimalApi | Controllers |
 |---|---|---|---|
-| `Result.Success()` / `Success(data)` / `Success(metadata)` | `ValidationErrors`, `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | Returned by the Core handlers to the catalog and orders endpoints | planned |
-| `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | `PlaceOrderEndpoint` (passes non-payment failures through to the standard mapper) | planned |
-| Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | — (Core concern) | planned |
-| `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | — (Core concern) | planned |
-| `Result.Combine` | `GetManyAsync`, `RestockBooks`, `ValidationDecorator` | — (Core concern) | planned |
-| `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | — (Core concern) | planned |
-| `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | — (Core concern) | planned |
-| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary` | — (Core concern) | planned |
-| `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` on `Task<Result<T>>` | `AddBook`, `ChangeBookPrice`, `RetireBook`, `GetOrder`, `PlaceOrder` | — (Core concern) | planned |
-| `BindAsync` on `Result` and `Result<T>` instances | `RestockBooks`, `GetOrder`, `PlaceOrder` | — (Core concern) | planned |
-| `EnsureAsync` with an async predicate | `RetireBook` | — (Core concern) | planned |
-| `ValueOrThrow` | `BookSeedData`, `GetManyAsync`, `PlaceOrder`, `RestockBooks` | — (Core concern) | planned |
-| `ValueOrDefault` | `GetOrderSummary` | — (Core concern) | planned |
-| `ToResult` (`Result<T>` to `Result`) | `RetireBook`, `RestockBooks` | — (Core concern) | planned |
-| `JoinErrorMessages` | `PlaceOrder`, `RestockBooks` | — (Core concern) | planned |
-| `FirstErrorMessage` | `PlaceOrder` | — (Core concern) | planned |
-| Success and error metadata | `RestockBooks`, `CancelOrder` (success); `BookErrors.InsufficientStock`, `ValidationErrors` (error) | Validation metadata maps to `ValidationProblemDetails` on catalog endpoints | planned |
-| `Error` `with { Metadata = ... }` | `BookErrors.InsufficientStock` | — (Core concern) | planned |
-| Error factories (`NotFound`, `Unauthorized`, `Forbidden`, `Conflict`, `Failure`, `Timeout`, `Unexpected`, `Canceled`, `Validation`) | `BookErrors`, `OrderErrors`, `CurrentUser`, `ValidationErrors` | All ErrorTypes map through `ToMinimalApiResult`; payment declines map to 402 in `PlaceOrderEndpoint` | planned |
-| `Kovecses.Result.FluentAssertions` | `BookStore.Core.Tests` (`BeSuccess`, `BeFailure`, `HaveError`, `HaveType`, `HaveData`, `HaveMetadata`, `HaveErrors`, `HaveValidationProperty`, `ThrowOnValueAccess`) | `Sample.MinimalApi.Tests` (`BeSuccess`, `BeFailure`, `HaveType`) | planned |
-| `Kovecses.Result.AspNetCore` (HTTP result mapping, ProblemDetails) | n/a (host concern) | Catalog/order endpoints (`ToMinimalApiResult`, async and Match variants, direct Error mapping, wrapped internal response) | planned |
-| JSON serialization of results and errors | n/a (host concern) | Internal book endpoint and wrapped-result integration tests | planned |
+| `Result.Success()` / `Success(data)` / `Success(metadata)` | `ValidationErrors`, `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | Returned by the Core handlers to the catalog and orders endpoints | `BooksController.Restock`, `OrdersController.Place` |
+| `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | `PlaceOrderEndpoint` (passes non-payment failures through to the standard mapper) | `OrdersController.Place` failure mapping |
+| Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | — (Core concern) | Via Core handlers |
+| `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | — (Core concern) | Via Core validation decorator |
+| `Result.Combine` | `GetManyAsync`, `RestockBooks`, `ValidationDecorator` | — (Core concern) | Via Core handlers |
+| `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | — (Core concern) | `OrdersController.Place` |
+| `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | — (Core concern) | Via Core handlers |
+| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary` | — (Core concern) | Via Core handlers |
+| `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` on `Task<Result<T>>` | `AddBook`, `ChangeBookPrice`, `RetireBook`, `GetOrder`, `PlaceOrder` | — (Core concern) | Via Core handlers |
+| `BindAsync` on `Result` and `Result<T>` instances | `RestockBooks`, `GetOrder`, `PlaceOrder` | — (Core concern) | Via Core handlers |
+| `EnsureAsync` with an async predicate | `RetireBook` | — (Core concern) | Via Core handlers |
+| `ValueOrThrow` | `BookSeedData`, `GetManyAsync`, `PlaceOrder`, `RestockBooks` | — (Core concern) | Via Core handlers |
+| `ValueOrDefault` | `GetOrderSummary` | — (Core concern) | Via Core handlers |
+| `ToResult` (`Result<T>` to `Result`) | `RetireBook`, `RestockBooks` | — (Core concern) | Via Core handlers |
+| `JoinErrorMessages` | `PlaceOrder`, `RestockBooks` | — (Core concern) | Via Core handlers |
+| `FirstErrorMessage` | `PlaceOrder` | — (Core concern) | Via Core handlers |
+| Success and error metadata | `RestockBooks`, `CancelOrder` (success); `BookErrors.InsufficientStock`, `ValidationErrors` (error) | Validation metadata maps to `ValidationProblemDetails` on catalog endpoints | `BooksController.Restock` response header; `BooksController` validation |
+| `Error` `with { Metadata = ... }` | `BookErrors.InsufficientStock` | — (Core concern) | Via Core handlers |
+| Error factories (`NotFound`, `Unauthorized`, `Forbidden`, `Conflict`, `Failure`, `Timeout`, `Unexpected`, `Canceled`, `Validation`) | `BookErrors`, `OrderErrors`, `CurrentUser`, `ValidationErrors` | All ErrorTypes map through `ToMinimalApiResult`; payment declines map to 402 in `PlaceOrderEndpoint` | `OrdersController.Place` direct `Error.ToActionResult` fallback |
+| `Kovecses.Result.FluentAssertions` | `BookStore.Core.Tests` (`BeSuccess`, `BeFailure`, `HaveError`, `HaveType`, `HaveData`, `HaveMetadata`, `HaveErrors`, `HaveValidationProperty`, `ThrowOnValueAccess`) | `Sample.MinimalApi.Tests` (`BeSuccess`, `BeFailure`, `HaveType`) | `ControllersIntegrationTests` (`BeSuccess`, `BeFailure`, `HaveError`, `ValueOrThrow`) |
+| `Kovecses.Result.AspNetCore` (HTTP result mapping, ProblemDetails) | n/a (host concern) | Catalog/order endpoints (`ToMinimalApiResult`, async and Match variants, direct Error mapping, wrapped internal response) | `BooksController`, `OrdersController` |
+| JSON serialization of results and errors | n/a (host concern) | Internal book endpoint and wrapped-result integration tests | `InternalOrdersController`, `ControllersIntegrationTests` |

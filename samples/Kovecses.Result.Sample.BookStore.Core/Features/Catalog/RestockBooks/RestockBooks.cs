@@ -7,11 +7,18 @@ public sealed record RestockBooksCommand(IReadOnlyList<RestockItem> Items) : IRe
 public sealed class RestockBooksValidator : IValidator<RestockBooksCommand>
 {
     public Task<Result> ValidateAsync(RestockBooksCommand request, CancellationToken cancellationToken)
-        => new ValidationErrors()
-            .AddIf(request.Items.Count == 0, nameof(request.Items), "At least one item is required.")
-            .AddIf(request.Items.Any(item => item.Quantity < 1), nameof(request.Items), "Every quantity must be 1 or greater.")
-            .AddIf(request.Items.GroupBy(item => item.Isbn).Any(group => group.Count() > 1), nameof(request.Items), "Each ISBN can only appear once.")
+    {
+        var items = request.Items;
+        var validItems = items?.OfType<RestockItem>().ToArray() ?? [];
+
+        return new ValidationErrors()
+            .AddIf(items is null || items.Count == 0, nameof(request.Items), "At least one item is required.")
+            .AddIf(items is not null && validItems.Length != items.Count, nameof(request.Items), "Every item is required.")
+            .AddIf(validItems.Any(item => string.IsNullOrWhiteSpace(item.Isbn)), nameof(request.Items), "Every item needs an ISBN.")
+            .AddIf(validItems.Any(item => item.Quantity < 1), nameof(request.Items), "Every quantity must be 1 or greater.")
+            .AddIf(validItems.GroupBy(item => item.Isbn).Any(group => group.Count() > 1), nameof(request.Items), "Each ISBN can only appear once.")
             .ToResultAsync();
+    }
 }
 
 /// <summary>

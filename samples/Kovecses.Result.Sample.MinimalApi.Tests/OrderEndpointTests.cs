@@ -43,6 +43,22 @@ public sealed class OrderEndpointTests(BookStoreApplicationFactory factory)
     }
 
     [Fact]
+    public async Task PlaceOrder_WhenLineIsNull_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        var command = new { Lines = new object?[] { null } };
+
+        // Act
+        using var response = await _client.PostAsJsonAsync("/api/orders", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("Every line is required.", problem.GetProperty("errors").GetProperty("Lines")
+            .EnumerateArray().Select(message => message.GetString()));
+    }
+
+    [Fact]
     public async Task PlaceOrder_WhenPaymentIsDeclined_ShouldMapPaymentRequired()
     {
         // Arrange
