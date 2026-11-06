@@ -70,10 +70,10 @@ The library supports powerful implicit conversions to reduce boilerplate, includ
 ```csharp
 // Success (with or without data)
 public Result Create() => Result.Success();
-public Result<Employee> Get() => new Employee(1, "John Doe", "Engineer"); // Implicit conversion
+public Result<User> Get() => new User(1, "John Doe", "Engineer"); // Implicit conversion
 
 // Failure (Single Error)
-public Result<Employee> Get(int id) => Error.NotFound(message: $"Employee {id} not found."); // Implicit conversion
+public Result<User> Get(int id) => Error.NotFound(message: $"User {id} not found."); // Implicit conversion
 
 // Failure (Custom code and message - defaults to ErrorType.Failure / HTTP 400)
 public Result Process() => Result.Failure("Order.InvalidState", "The order cannot be modified in its current state.");
@@ -97,15 +97,15 @@ public Result Validate(User user) => [
 ]; // Implicitly converts Error[] to Result
 
 // Failure (List of Errors)
-public Result<Employee> RegisterEmployee(RegisterRequest request) {
+public Result<User> RegisterUser(RegisterRequest request) {
     List<Error> errors = [];
     if (string.IsNullOrEmpty(request.Name)) errors.Add(Error.Validation("Name", "Required"));
     if (request.Salary < 0) errors.Add(Error.Validation("Salary", "Positive only"));
 
     if (errors.Count > 0) 
-        return errors; // Implicitly converts List<Error> to Result<Employee>
+        return errors; // Implicitly converts List<Error> to Result<User>
 
-    return new Employee(request.Name, request.Salary);
+    return new User(request.Name, request.Salary);
 }
 ```
 
