@@ -1,480 +1,186 @@
 # Kovecses.Result
 
-[![NuGet Version](https://img.shields.io/nuget/v/Kovecses.Result?style=flat-square&logo=nuget)](https://www.nuget.org/packages/Kovecses.Result)
-[![NuGet Version (AspNetCore)](https://img.shields.io/nuget/v/Kovecses.Result.AspNetCore?style=flat-square&logo=nuget&label=AspNetCore)](https://www.nuget.org/packages/Kovecses.Result.AspNetCore)
-[![NuGet Version (FluentAssertions)](https://img.shields.io/nuget/v/Kovecses.Result.FluentAssertions?style=flat-square&logo=nuget&label=FluentAssertions)](https://www.nuget.org/packages/Kovecses.Result.FluentAssertions)
+[![NuGet: Kovecses.Result](https://img.shields.io/nuget/v/Kovecses.Result?style=flat-square&logo=nuget)](https://www.nuget.org/packages/Kovecses.Result)
+[![NuGet: Kovecses.Result.AspNetCore](https://img.shields.io/nuget/v/Kovecses.Result.AspNetCore?style=flat-square&logo=nuget&label=AspNetCore)](https://www.nuget.org/packages/Kovecses.Result.AspNetCore)
+[![NuGet: Kovecses.Result.FluentAssertions](https://img.shields.io/nuget/v/Kovecses.Result.FluentAssertions?style=flat-square&logo=nuget&label=FluentAssertions)](https://www.nuget.org/packages/Kovecses.Result.FluentAssertions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-A lightweight, functional, and robust Result pattern implementation for .NET 8, 9, and 10 with seamless ASP.NET Core integration.
+Kovecses.Result provides `Result` and `Result<TData>` types for representing successful operations and failures with structured errors. The companion packages map results to ASP.NET Core responses and provide fluent assertions for tests. The packages target .NET 8, .NET 9, and .NET 10.
 
----
+## Contents
 
-### Support the Project
-If you find this library useful, please give it a **star** on GitHub! It helps more developers discover the project. ⭐
-
----
-
-### Table of Contents
-1. [Introduction](#1-introduction)
-2. [Installation](#installation)
-3. [Core Library (Kovecses.Result)](#2-core-library-kovecsesresult)
-    - [Basic Usage](#basic-usage)
-    - [Accessing Error Details](#accessing-error-details)
-    - [Functional Extensions](#functional-extensions-railway-oriented-programming)
-    - [Async Chaining](#async-chaining-task-extensions)
-    - [Error Aggregation (Combine)](#error-aggregation-combine)
-    - [Custom Errors & Metadata](#custom-errors--metadata)
-    - [Safety Helpers](#safety-helpers)
-    - [JSON Serialization](#json-serialization-support)
-    - [Advanced Usage (Performance)](#advanced-usage-performance)
-4. [ASP.NET Core Integration](#3-aspnet-core-integration-kovecsesresultaspnetcore)
-5. [Testing Support (Fluent Assertions)](#4-testing-support-kovecsesresultfluentassertions)
-
----
+- [Installation](#installation)
+- [Core package](#core-package)
+  - [Errors](#errors)
+  - [Results](#results)
+  - [Functional operations](#functional-operations)
+  - [Asynchronous operations](#asynchronous-operations)
+  - [JSON](#json)
+- [ASP.NET Core package](#aspnet-core-package)
+- [Fluent assertions package](#fluent-assertions-package)
+- [Samples](#samples)
+- [Migrating from 2.x](#migrating-from-2x)
 
 ## Installation
 
-Install the packages via NuGet:
+Install the packages you need from NuGet:
 
-```bash
-# Core Library
+```shell
 dotnet add package Kovecses.Result
-
-# ASP.NET Core Integration
 dotnet add package Kovecses.Result.AspNetCore
-
-# Fluent Assertions for Testing
 dotnet add package Kovecses.Result.FluentAssertions
 ```
 
----
+`Kovecses.Result.AspNetCore` and `Kovecses.Result.FluentAssertions` depend on `Kovecses.Result`. The ASP.NET Core package uses the shared `Microsoft.AspNetCore.App` framework. The assertions package depends on `xunit.assert`.
 
-## 1. Introduction
-The Result pattern encapsulates the outcome of an operation. Instead of relying on exceptions for flow control, methods return a `Result` object that explicitly indicates success or failure.
+## Core package
 
-**Why use this library?**
-- **High Performance:** Optimized generic factories for MediatR-style pipelines and no expensive exception overhead.
-- **Type Safety:** Flat, unified error structure avoiding key collisions in validation.
-- **Standard Compliant:** Native support for RFC 7807 (Problem Details) and `ValidationProblemDetails`.
-- **Railway-Oriented:** Build clean, declarative processing pipelines using `Match`, `Map`, and `Bind`.
+Install [Kovecses.Result](https://www.nuget.org/packages/Kovecses.Result) for the core types and operations.
 
----
+### Errors
 
-## 2. Core Library (`Kovecses.Result`)
+An `Error` is a record with a non-empty `Code`, non-null `Message`, an `ErrorType`, and optional metadata. `ErrorType` identifies the technical category; its values are `Failure`, `Unexpected`, `Validation`, `Conflict`, `NotFound`, `Unauthorized`, `Forbidden`, `Timeout`, and `Canceled`. `ErrorCodes` provides a `General.*` constant for each category.
 
-The core library contains the fundamental types and functional extensions. It supports multiple errors per result and implicit conversions.
+Use the built-in factories or construct an error directly:
 
-### Basic Usage
-The library supports powerful implicit conversions to reduce boilerplate, including support for C# 12 collection expressions.
+| Factory | Resulting type | Arguments |
+|---|---|---|
+| `Error.Validation(code, message, metadata = null)` | `Validation` | Code, message, optional field metadata |
+| `Error.NotFound(code = ErrorCodes.NotFound, message = ...)` | `NotFound` | Optional code and message |
+| `Error.Unauthorized(code = ErrorCodes.Unauthorized, message = ...)` | `Unauthorized` | Optional code and message |
+| `Error.Forbidden(code = ErrorCodes.Forbidden, message = ...)` | `Forbidden` | Optional code and message |
+| `Error.Conflict(code = ErrorCodes.Conflict, message = ...)` | `Conflict` | Optional code and message |
+| `Error.Failure(code = ErrorCodes.Failure, message = ...)` | `Failure` | Optional code and message |
+| `Error.Timeout(code = ErrorCodes.Timeout, message = ...)` | `Timeout` | Optional code and message |
+| `Error.Unexpected(code = ErrorCodes.Unexpected, message = ...)` | `Unexpected` | Optional code and message |
+| `Error.Canceled(code = ErrorCodes.Canceled, message = ...)` | `Canceled` | Optional code and message |
+
+For the eight factories other than `Validation`, positional arguments are ordered `(code, message)`. Use named arguments when setting only one value. This follows the constructor order `new Error(code, message, type, metadata)`.
+
+The bookstore sample uses a domain-specific code while retaining the `NotFound` category:
 
 ```csharp
-// Success (with or without data)
-public Result Create() => Result.Success();
-public Result<User> Get() => new User(1, "John Doe", "Engineer"); // Implicit conversion
-
-// Failure (Single Error)
-public Result<User> Get(int id) => Error.NotFound(message: $"User {id} not found."); // Implicit conversion
-
-// Failure (Custom code and message - defaults to ErrorType.Failure / HTTP 400)
-public Result Process() => Result.Failure("Order.InvalidState", "The order cannot be modified in its current state.");
-
-// Failure (With explicit type - e.g. Conflict -> HTTP 409)
-public Result Create() => Result.Failure("User.Exists", "User already registered.", ErrorType.Conflict);
-
-// Failure with data and explicit type (e.g. NotFound -> HTTP 404)
-public Result<User> GetUser(int id) 
-    => Result.Failure<User>("User.NotFound", $"User {id} not found.", ErrorType.NotFound);
+public static Error NotFound(string isbn)
+    => Error.NotFound(message: $"Book '{isbn}' was not found.", code: Codes.NotFound);
 ```
 
-#### Multiple Errors
-The library natively supports returning multiple errors at once.
+Source: [BookErrors.cs](https://github.com/peterkovecses/Result/blob/master/samples/Kovecses.Result.Sample.BookStore.Core/Domain/Catalog/BookErrors.cs).
+
+`Code` and `Message` are validated when created and when changed with a record `with` expression. Code must not be null, empty, or whitespace; message must not be null. Validation failures throw argument exceptions.
+
+### Results
+
+Use `Result.Success(...)` or `Result.Failure(...)` to create results. The non-generic `Result` represents success or failure without a value; `Result<TData>` also carries `Data` on success.
+
+- `Result.Success(metadata = null)` creates a successful non-generic result.
+- `Result.Success<TData>(data, metadata = null)` creates a successful result with data.
+- Both `Result.Failure` and `Result.Failure<TData>` accept an `Error`, `(code, message)`, `(code, message, ErrorType)`, or `IEnumerable<Error>`, with optional result metadata.
+- `Result.CreateFailure<TResponse>(Error[])` creates a failure for `Result` or `Result<TData>` response types.
+- `Result.Combine(params Result[])` succeeds when every input succeeds; otherwise it returns the errors from all failed inputs.
+
+Errors, error arrays, and `List<Error>` values implicitly convert to both result types. A value implicitly converts to a successful `Result<TData>`. These conversions are useful when a sample handler returns a value or errors directly; see the [bookstore samples](https://github.com/peterkovecses/Result/blob/master/samples/README.md).
+
+`Errors` is `null` for success and an `Error[]` for failure. `Metadata` is optional. Both result types expose `IsSuccess`, `IsFailure`, `FirstError`, and `FirstErrorMessage`; `Result<TData>` also exposes `Data`. `ValueOrThrow(exceptionFactory = null)` returns data on success or throws on failure, using `InvalidOperationException` by default. `ValueOrDefault(defaultValue = default)` returns data or the supplied fallback.
+
+The bookstore lookup handler maps a repository result into a DTO:
 
 ```csharp
-// Failure (Multiple Errors using Collection Expressions - C# 12)
-public Result Validate(User user) => [
-    Error.Validation("Email", "Email is required."),
-    Error.Validation("Age", "Must be 18 or older.")
-]; // Implicitly converts Error[] to Result
+public sealed record GetBookQuery(string Isbn) : IRequest<Result<BookDto>>;
 
-// Failure (List of Errors)
-public Result<User> RegisterUser(RegisterRequest request) {
-    List<Error> errors = [];
-    if (string.IsNullOrEmpty(request.Name)) errors.Add(Error.Validation("Name", "Required"));
-    if (request.Salary < 0) errors.Add(Error.Validation("Salary", "Positive only"));
-
-    if (errors.Count > 0) 
-        return errors; // Implicitly converts List<Error> to Result<User>
-
-    return new User(request.Name, request.Salary);
-}
-```
-
-### Accessing Error Details
-When an operation fails, you can easily inspect the results:
-
-```csharp
-var result = Get(123);
-if (result.IsFailure) 
+public sealed class GetBookHandler(IBookRepository books) : IRequestHandler<GetBookQuery, Result<BookDto>>
 {
-    Error? first = result.FirstError;            // The primary Error object
-    Error[]? all = result.Errors;                // All Error objects
-    string? msg = result.FirstErrorMessage;      // Message of the primary error
-    string summary = result.JoinErrorMessages(); // All messages joined: "Msg 1; Msg 2"
+    public async Task<Result<BookDto>> HandleAsync(GetBookQuery request, CancellationToken cancellationToken)
+        => (await books.GetAsync(request.Isbn, cancellationToken)).Map(BookDto.From);
 }
 ```
 
-### Functional Extensions (Railway-Oriented Programming)
-Reduce nested `if` statements and build declarative pipelines.
+Source: [GetBook.cs](https://github.com/peterkovecses/Result/blob/master/samples/Kovecses.Result.Sample.BookStore.Core/Features/Catalog/GetBook/GetBook.cs).
+
+### Functional operations
+
+`Result` and `Result<TData>` provide `Match` and `MatchFirst`, plus `MatchAsync` and `MatchFirstAsync`. `Match` passes the complete error array to its failure callback; `MatchFirst` passes the first error. Their asynchronous variants take task-returning callbacks.
+
+`Result<TData>` provides `Map` and `MapAsync` to transform successful data, `Bind` and `BindAsync` to continue with another result, and `Tap` and `TapAsync` to run a side effect without replacing the result. Non-generic `Result` provides `Bind`, `BindAsync`, `Tap`, and `TapAsync`.
+
+The core `ResultExtensions` add:
+
+- `Ensure` for a synchronous predicate, plus `EnsureAsync` overloads for synchronous or asynchronous predicates on `Result<TData>` and `Task<Result<TData>>`.
+- `ToResult(data)` to add data to a non-generic result, or `ToResult()` to discard generic result data.
+- `JoinErrorMessages(separator = "; ")` to join the messages on a non-generic result.
+
+The bookstore batch-restock handler combines failures before saving and uses `BindAsync` to continue only when the combined result succeeds:
 
 ```csharp
-// Match: Execute different paths based on state
+var rejections = Result.Combine(restocked);
 
-// 1. Match and discard - ignore error details
-return result.Match(
-    data => Results.Created($"/employees/{data.Id}", data),
-    _ => Results.StatusCode(StatusCodes.Status400BadRequest));
-
-// 2. MatchFirst - use only the first error
-return result.MatchFirst(
-    data => Results.Created($"/employees/{data.Id}", data),
-    error => result.ToMinimalApiResult());
-
-// 3. Match with Error[] - use all errors
-return result.Match(
-    data => Results.Created($"/employees/{data.Id}", data),
-    errors => Results.BadRequest(new 
-    { 
-        message = "One or more errors occurred",
-        errors = errors.Select(e => new { e.Code, e.Message }) 
-    }));
-
-// Map: Transform success data
-Result<UserDto> dto = result.Map(u => new UserDto(u.Id, u.Name));
-
-// Bind: Chain result-returning operations (FlatMap)
-return await GetUserAsync(id)
-    .BindAsync(user => UpdateAsync(user));
-
-// Tap: Execute side effects (e.g., logging) without modifying the result
-result.Tap(data => Console.WriteLine($"Processed: {data}"));
-```
-
-### Async Chaining (Task Extensions)
-Chain operations directly on `Task<Result>` without manual `await` at each step. This makes asynchronous "railway-oriented" pipelines much cleaner.
-
-```csharp
-return await _repository.GetByIdAsync(id)               // Task<Result<User>>
-    .BindAsync(user => _service.Validate(user))         // Task<Result<User>>
-    .BindAsync(user => _repository.Update(user))        // Task<Result>
-    .MatchAsync(() => Results.NoContent(), errors => Result.Failure(errors).ToMinimalApiResult());
-```
-
-### Error Aggregation (`Combine`)
-Merges multiple results into one. If any fail, it aggregates **all** errors from all results into a single flat collection. This avoids any information loss and is perfect for complex validation scenarios.
-
-```csharp
-var result = Result.Combine(
-    ValidateEmail(email),
-    ValidatePassword(password),
-    CheckPermissions(user)
-);
-
-if (result.IsFailure) {
-    // result.Errors contains all collected errors from all failing steps
-}
-```
-
-### Custom Errors & Metadata
-Define domain-specific errors and attach extra context to any result.
-
-```csharp
-// 1. Define constants for your business error codes
-public static class UserErrorCodes {
-    public const string AccountLocked = "User.AccountLocked";
-}
-
-// 2. Create a factory for domain-specific Error objects
-public static class UserErrors {
-    public static Error AccountLocked(int id) => Error.Forbidden(UserErrorCodes.AccountLocked, $"User {id} is locked and cannot perform this action.");
-}
-
-// Attach Success Metadata
-var metadata = new Dictionary<string, object> { { "TraceId", "abc-123" } };
-return Result.Success(data, metadata);
-
-// Validation errors with field-level metadata (recommended pattern)
-// Metadata keys are property names, values are validation message arrays
-var validationMetadata = new Dictionary<string, object>
+if (rejections.IsFailure)
 {
-    ["Email"] = new[] { "Email is required.", "Email format is invalid." },
-    ["Password"] = new[] { "Password must be at least 8 characters." }
-};
-
-var validationError = Error.Validation(
-    ErrorCodes.Validation,
-    "Validation failed.",
-    validationMetadata
-);
-
-var result = Result.Failure(validationError);
-```
-
-**Validation Error Response Format:**
-```json
-{
-  "data": null,
-  "errors": [
-    {
-      "code": "General.Validation",
-      "message": "Validation failed.",
-      "type": 2,
-      "metadata": {
-        "Email": [
-          "Email is required.",
-          "Email format is invalid."
-        ],
-        "Password": [
-          "Password must be at least 8 characters."
-        ]
-      }
-    }
-  ]
+    logger.LogWarning("Restock rejected: {Reasons}", rejections.JoinErrorMessages());
 }
+
+return await rejections.BindAsync(() => SaveAllAsync(request.Items, cancellationToken));
 ```
 
-This pattern is recommended for handling multiple validation errors in application layers (e.g., MediatR ValidationBehavior). Clients can easily parse and display field-level errors directly from metadata without additional processing. This pattern is natively supported by the `AspNetCore` mapping logic, automatically populating the `errors` dictionary in `ValidationProblemDetails`.
+Source: [RestockBooks.cs](https://github.com/peterkovecses/Result/blob/master/samples/Kovecses.Result.Sample.BookStore.Core/Features/Catalog/RestockBooks/RestockBooks.cs).
 
+### Asynchronous operations
 
-### Safety Helpers
-Fail fast or provide fallbacks when certain of the outcome.
-```csharp
-var data = result.ValueOrThrow(); // Throws InvalidOperationException on failure with all error details
-var data = result.ValueOrThrow(errors => new MyException(errors[0].Message));
-var data = result.ValueOrDefault("Fallback"); 
-```
+The core `ResultExtensions` also support `Task<Result>` and `Task<Result<TData>>`:
 
-### JSON Serialization Support
+- `BindAsync` chains a task-returning operation for `Task<Result>`; for `Task<Result<TData>>`, it accepts a callback returning either `Result<TNewData>` or `Task<Result<TNewData>>`.
+- `MapAsync` on `Task<Result<TData>>` accepts a synchronous or task-returning mapping function.
+- `TapAsync` on either task result accepts a synchronous action or task-returning function; generic overloads receive the data.
+- `MatchAsync` on either task result accepts synchronous callbacks or task-returning callbacks.
+- `EnsureAsync` accepts a synchronous or task-returning predicate for `Task<Result<TData>>`.
 
-The library includes built-in JSON converters for `System.Text.Json` that handle both serialization and deserialization correctly.
+These operations skip success callbacks on failure and carry the failure forward.
 
-```csharp
-// Serialization
-var result = Result.Success(new UserDto(1, "John"));
-var json = JsonSerializer.Serialize(result);
+### JSON
 
-// Deserialization (works with direct API responses)
-var deserialized = JsonSerializer.Deserialize<Result<UserDto>>(json);
+`Error` and both result types have `System.Text.Json` converters registered automatically. Serialize and deserialize them with `JsonSerializer`; the converters honor `JsonSerializerOptions` naming policies, including camel case. Error payloads with a missing, null, empty, or whitespace code, or a missing or null message, fail deserialization with `JsonException` rather than being replaced with placeholder values. An omitted error type defaults to `ErrorType.Failure`.
 
-// Works with naming policies
-var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-var restored = JsonSerializer.Deserialize<Result<UserDto>>(json, options);
-```
+The [Minimal API sample](https://github.com/peterkovecses/Result/tree/master/samples/Kovecses.Result.Sample.MinimalApi) includes HTTP round-trip tests for wrapped results.
 
-### Advanced Usage (Performance)
-The library is optimized for high-performance scenarios like MediatR Pipelines. The `CreateFailure<TResponse>` method uses cached delegates to instantiate generic result types nearly as fast as direct constructor calls.
+## ASP.NET Core package
 
-```csharp
-// Example in a MediatR Pipeline Behavior
-public async Task<TResponse> Handle(TRequest req, RequestHandlerDelegate<TResponse> next, CancellationToken ct) {
-    var errors = await ValidateAsync(req);
-    if (errors.Any()) {
-        return Result.CreateFailure<TResponse>(errors); // Ultra-fast generic instantiation
-    }
-    return await next();
-}
-```
+Install [Kovecses.Result.AspNetCore](https://www.nuget.org/packages/Kovecses.Result.AspNetCore) to map results to Minimal API `IResult` or controller `IActionResult` responses. `ToMinimalApiResult` and `ToActionResult` have synchronous and `Task`-based overloads for `Result` and `Result<TData>`. `MatchToMinimalApiResult` and `MatchToActionResult` provide the same sync/async and generic/non-generic variants, with a success callback and optional failure callback receiving `Error[]`. `Error` also has direct `ToMinimalApiResult` and `ToActionResult` extensions.
 
----
+By default, successful non-generic results map to `204 No Content`; successful generic results map to `200 OK` with data, or `204 No Content` when data is null. Set `includeResultInResponse: true` to return the full result object. Failures map to `ProblemDetails`; all-validation failures map to `ValidationProblemDetails`. For mixed or non-validation errors, the first error determines the status and detail. Multiple errors are included in the response extensions. An optional failure callback on a `MatchTo...` method overrides the default failure mapping.
 
-## 3. ASP.NET Core Integration (`Kovecses.Result.AspNetCore`)
+| `ErrorType` | HTTP status |
+|---|---:|
+| `Failure` | 400 |
+| `Unexpected` | 500 |
+| `Validation` | 400 |
+| `Conflict` | 409 |
+| `NotFound` | 404 |
+| `Unauthorized` | 401 |
+| `Forbidden` | 403 |
+| `Timeout` | 408 |
+| `Canceled` | 400 |
 
-Standardized HTTP responses with zero effort.
+The [Minimal API](https://github.com/peterkovecses/Result/tree/master/samples/Kovecses.Result.Sample.MinimalApi) and [Controllers](https://github.com/peterkovecses/Result/tree/master/samples/Kovecses.Result.Sample.Controllers) samples show bookstore endpoints, validation metadata, and custom payment-decline responses.
 
-### Automatic Mapping
-The library detects the nature of failures and responds accordingly:
-- **Pure Validation:** If all errors are of type `Validation`, it returns `400 ValidationProblemDetails` (standard ASP.NET format).
-- **Mixed/Other Failures:** Uses "First Error Wins" for status code and includes all errors in the `extensions["errors"]` field.
+## Fluent assertions package
 
-| ErrorType | Status Code | Default Title | Description |
-|-----------|-------------|---------------|-------------|
-| Validation | 400 | Validation Error | Grouped into `ValidationProblemDetails` |
-| Failure | 400 | Bad Request | General business rule violations |
-| NotFound | 404 | Not Found | Resource does not exist |
-| Conflict | 409 | Conflict | Resource state conflict (e.g., duplicate) |
-| Unauthorized| 401 | Unauthorized | Authentication required |
-| Forbidden | 403 | Forbidden | Insufficient permissions |
-| Timeout | 408 | Request Timeout | The operation timed out |
-| Canceled | 400 | Bad Request | Operation was canceled |
-| Unexpected| 500 | Internal Server Error | Unhandled or internal errors |
+Install [Kovecses.Result.FluentAssertions](https://www.nuget.org/packages/Kovecses.Result.FluentAssertions) to use `Should()` extensions for `Result`, `Result<TData>`, and nullable `Error`.
 
-### Mapping Strategies
+- Result assertions: `BeSuccess`, `BeFailure`, `HaveErrors`, `HaveError(code)`, `HaveValidationErrorFor(field)`, and `HaveMetadata(key)` / `HaveMetadata(key, value)`.
+- Generic result assertions add `HaveData(value)`, `HaveData(inspector)`, `HaveData(predicate)`, `WhichData`, and `ThrowOnValueAccess<TException>(exceptionFactory = null)`.
+- Error assertions: `NotBeNull`, `HaveCode`, `HaveMessage`, `HaveType`, `HaveMetadata(key)` / `HaveMetadata(key, value)`, and `HaveValidationProperty(field)`.
+- Error collection assertions: `HaveCount`, `AllBeOfType`, and `Contain(predicate)`.
+- Validation message assertions: `Contain`, `ContainAll`, and `HaveCount`; `ValidationPropertyAssertions` also provides `BeExactly`. Chained error, collection, and validation-property assertions expose `And` when a parent assertion is available.
+- `ValidationAssertions<TParent>.ExtractMessages(error, field)` retrieves validation messages for custom assertions.
 
-#### Standard REST (Public APIs)
-Returns the data on success (`200 OK` or `204 No Content`) and `ProblemDetails` on failure.
+Metadata assertions support metadata values in memory or after JSON deserialization. The [bookstore tests](https://github.com/peterkovecses/Result/tree/master/samples/Kovecses.Result.Sample.BookStore.Core.Tests) and [HTTP integration tests](https://github.com/peterkovecses/Result/tree/master/samples) use these assertions.
 
-```csharp
-// Minimal API Example (Asynchronous)
-app.MapGet("/users/{id}", (int id, IMediator m) => 
-    m.SendAsync(new GetUser(id)).ToMinimalApiResultAsync());
+## Samples
 
-// Controller Example (Asynchronous)
-[HttpGet("{id}")]
-public async Task<IActionResult> Get(int id) 
-    => await _service.GetByIdAsync(id).ToActionResultAsync();
+The repository includes a shared bookstore core, its unit tests, a Minimal API host, and a Controllers host. The feature matrix and instructions are in [samples/README.md](https://github.com/peterkovecses/Result/blob/master/samples/README.md); the project source and tests provide compiling examples of the APIs described above.
 
-// Synchronous variants are also available
-public IActionResult Create(User cmd) => _service.Create(cmd).ToActionResult();
-```
+## Migrating from 2.x
 
-#### Smart Mapping (Custom Success Path)
-The `MatchToActionResult` and `MatchToMinimalApiResult` methods (and their async counterparts) allow you to handle the success case (e.g., returning `201 Created`) while letting the library handle the failure mapping automatically.
+- **Error factory arguments:** `NotFound`, `Unauthorized`, `Forbidden`, `Conflict`, `Failure`, `Timeout`, `Unexpected`, and `Canceled` now take `(code, message)`. Change positional calls to the new order or use named arguments, such as `Error.NotFound(message: "Book not found")`.
+- **Error validation:** `Error.Custom` was removed; construct `new Error(code, message, type, metadata)` or use a typed factory. Empty or whitespace codes and null messages now throw. `with` expressions validate updated `Code` and `Message` values. Invalid deserialized errors now throw `JsonException` instead of receiving fallback values.
 
-```csharp
-// Controller with custom success and default failure mapping
-[HttpPost]
-public async Task<IActionResult> Create(CreateCommand cmd)
-    => await _mediator.SendAsync(cmd)
-        .MatchToActionResultAsync(data => CreatedAtAction(nameof(Get), new { id = data.Id }, data));
-
-// Minimal API with custom success and custom failure mapping
-app.MapPost("/users", async (CreateUserCommand cmd, IMediator m) => 
-    await m.SendAsync(cmd).MatchToMinimalApiResultAsync(
-        data => Results.Created($"/users/{data.Id}", data),
-        errors => Results.BadRequest("Custom error message")));
-```
-
-#### Wrapped Results (Internal/Typed Clients)
-Returns the full `Result` object in the body (e.g., for Blazor or Typed Clients).
-```csharp
-// Server-side (Asynchronous)
-return await resultTask.ToMinimalApiResultAsync(includeResultInResponse: true);
-
-// Server-side (Synchronous)
-return result.ToMinimalApiResult(includeResultInResponse: true);
-
-// Client-side deserialization
-var result = await response.Content.ReadFromJsonAsync<Result<UserDto>>();
-if (result.IsSuccess)
-    Console.WriteLine(result.Data.Name);
-```
-
-#### Direct Error Mapping
-You can also map a single `Error` object directly without wrapping it in a `Result` first.
-```csharp
-Error error = Error.NotFound(message: "User not found");
-return error.ToMinimalApiResult(); // Returns 404 ProblemDetails
-return error.ToActionResult();     // Returns 404 ObjectResult(ProblemDetails)
-```
-
----
-
-## 4. Testing Support (`Kovecses.Result.FluentAssertions`)
-
-Fluent extension methods for readable and maintainable tests.
-
-```csharp
-using Kovecses.Result.FluentAssertions;
-
-[Fact]
-public void Test_Operation()
-{
-    var result = _service.DoWork();
-    
-    // Assert Success
-    result.Should().BeSuccess()
-        .HaveData(expectedUser)                      // 1. Equality check
-        .HaveData(u => u!.Name == "John")            // 2. Boolean predicate
-        .HaveData(u =>                               // 3. Action-based inspection (auto null-check)
-        {
-            u.Name.Should().Be("John");
-            u.Age.Should().BeGreaterThan(18);
-        });
-
-    // 4. Direct access via WhichData (auto success & null-check)
-    result.Should().WhichData.Name.Should().Be("John");
-        
-    // Assert Specific Error
-    result.Should().BeFailure()
-        .HaveError(ErrorCodes.NotFound)
-            .HaveMessage("User not found.");
-            
-    // Assert Collection of Errors
-    result.Should().HaveErrors()
-        .HaveCount(2)
-        .AllBeOfType(ErrorType.Validation).And
-        .Contain(e => e.Code == "Email");
-        
-    // Assert Field-Specific Validation
-    result.Should().HaveValidationErrorFor("Email").Contain("required");
-
-    // Assert detailed Error properties and chain back to Result
-    result.Should()
-        .HaveError("User.AccountLocked")
-            .HaveMessage("User 42 is locked and cannot perform this action.").And
-        .BeFailure();
-
-    // Assert that accessing data on a failure result throws the correct exception
-    result.Should().ThrowOnValueAccess<InvalidOperationException>();
-}
-```
-
-### Aggregated Validation Errors with Metadata
-
-When validating multiple fields, create a single aggregated validation error with metadata containing field-level messages:
-
-```csharp
-public async Task<Result> ValidateAsync(CreateUserCommand request)
-{
-    var validationMessages = new Dictionary<string, object>();
-    
-    if (string.IsNullOrEmpty(request.FullName))
-        validationMessages["FullName"] = new[] { "Name is required." };
-    
-    if (request.Position is not { Length: >= 3 })
-        validationMessages["Position"] = new[] { "Position must be at least 3 characters." };
-    
-    if (validationMessages.Count > 0)
-        return Result.Failure(Error.Validation(ErrorCodes.Validation, "Validation failed.", validationMessages));
-    
-    return Result.Success();
-}
-```
-
-Assert with chainable fluent syntax:
-
-```csharp
-[Fact]
-public async Task CreateUser_WithValidationFailures_ShouldAggregateErrors()
-{
-    var result = await _validator.ValidateAsync(new CreateUserCommand 
-    { 
-        FullName = "", 
-        Position = "PM"  // Too short
-    });
-    
-    result.Should().BeFailure()
-        .HaveError(ErrorCodes.Validation)
-        .HaveValidationProperty("FullName")
-            .Contain("required")
-            .And
-        .HaveValidationProperty("Position")
-            .Contain("at least 3 characters");
-}
-```
-
-`HaveValidationProperty()` returns a chainable `ValidationPropertyAssertions` with:
-- `.Contain(string message)` - Assert message contains text
-- `.ContainAll(params string[] messages)` - Assert all messages are present
-- `.HaveCount(int expected)` - Assert exact message count
-- `.BeExactly(params string[] messages)` - Assert exact match
-- `.And` - Chain back to error assertions for multiple property checks
-
-### Custom Assertions
-If you need to write custom assertions for validation errors, you can use the `ValidationAssertions.ExtractMessages` helper to retrieve and normalize error messages from an `Error` object regardless of how they are stored (JsonElement, List, etc.).
-
-```csharp
-var error = result.Errors!.First(e => e.Code == "Email");
-var messages = ValidationAssertions<ResultAssertions>.ExtractMessages(error, "Email");
-
-Assert.Contains(messages, m => m.Contains("required"));
-```
+See the [3.0.0 release notes](https://github.com/peterkovecses/Result/blob/master/RELEASE_NOTES.md) for before-and-after examples and migration details.

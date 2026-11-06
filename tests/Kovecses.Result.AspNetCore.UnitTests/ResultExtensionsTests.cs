@@ -480,6 +480,52 @@ public class ResultExtensionsTests
         okResult.Value.ShouldBe("Custom: Data");
     }
 
+    [Fact]
+    public void MatchToMinimalApiResult_NonGeneric_WhenSuccess_ShouldReturnCustomResult()
+    {
+        var result = Result.Success();
+
+        var apiResult = result.MatchToMinimalApiResult(() => Results.NoContent());
+
+        apiResult.ShouldBeOfType<NoContent>();
+    }
+
+    [Fact]
+    public void MatchToMinimalApiResult_NonGeneric_WhenFailure_ShouldUseCustomFailureMapper()
+    {
+        var result = Result.Failure(Error.NotFound(message: "Book not found."));
+
+        var apiResult = result.MatchToMinimalApiResult(
+            () => Results.NoContent(),
+            errors => Results.BadRequest(errors[0].Message));
+
+        var badRequest = apiResult.ShouldBeOfType<BadRequest<string>>();
+        badRequest.Value.ShouldBe("Book not found.");
+    }
+
+    [Fact]
+    public async Task MatchToMinimalApiResultAsync_NonGeneric_WhenSuccess_ShouldReturnCustomResult()
+    {
+        var result = Task.FromResult(Result.Success());
+
+        var apiResult = await result.MatchToMinimalApiResultAsync(() => Results.NoContent());
+
+        apiResult.ShouldBeOfType<NoContent>();
+    }
+
+    [Fact]
+    public async Task MatchToMinimalApiResultAsync_NonGeneric_WhenFailure_ShouldUseCustomFailureMapper()
+    {
+        var result = Task.FromResult(Result.Failure(Error.NotFound(message: "Book not found.")));
+
+        var apiResult = await result.MatchToMinimalApiResultAsync(
+            () => Results.NoContent(),
+            errors => Results.BadRequest(errors[0].Message));
+
+        var badRequest = apiResult.ShouldBeOfType<BadRequest<string>>();
+        badRequest.Value.ShouldBe("Book not found.");
+    }
+
     #endregion
 
     #region MatchToActionResult
@@ -540,6 +586,52 @@ public class ResultExtensionsTests
         // Assert
         var okResult = actionResult.ShouldBeOfType<OkObjectResult>();
         okResult.Value.ShouldBe("Custom: Data");
+    }
+
+    [Fact]
+    public void MatchToActionResult_NonGeneric_WhenSuccess_ShouldReturnCustomResult()
+    {
+        var result = Result.Success();
+
+        var actionResult = result.MatchToActionResult(() => new NoContentResult());
+
+        actionResult.ShouldBeOfType<NoContentResult>();
+    }
+
+    [Fact]
+    public void MatchToActionResult_NonGeneric_WhenFailure_ShouldUseCustomFailureMapper()
+    {
+        var result = Result.Failure(Error.NotFound(message: "Book not found."));
+
+        var actionResult = result.MatchToActionResult(
+            () => new NoContentResult(),
+            errors => new BadRequestObjectResult(errors[0].Message));
+
+        var badRequest = actionResult.ShouldBeOfType<BadRequestObjectResult>();
+        badRequest.Value.ShouldBe("Book not found.");
+    }
+
+    [Fact]
+    public async Task MatchToActionResultAsync_NonGeneric_WhenSuccess_ShouldReturnCustomResult()
+    {
+        var result = Task.FromResult(Result.Success());
+
+        var actionResult = await result.MatchToActionResultAsync(() => new NoContentResult());
+
+        actionResult.ShouldBeOfType<NoContentResult>();
+    }
+
+    [Fact]
+    public async Task MatchToActionResultAsync_NonGeneric_WhenFailure_ShouldUseCustomFailureMapper()
+    {
+        var result = Task.FromResult(Result.Failure(Error.NotFound(message: "Book not found.")));
+
+        var actionResult = await result.MatchToActionResultAsync(
+            () => new NoContentResult(),
+            errors => new BadRequestObjectResult(errors[0].Message));
+
+        var badRequest = actionResult.ShouldBeOfType<BadRequestObjectResult>();
+        badRequest.Value.ShouldBe("Book not found.");
     }
 
     #endregion
