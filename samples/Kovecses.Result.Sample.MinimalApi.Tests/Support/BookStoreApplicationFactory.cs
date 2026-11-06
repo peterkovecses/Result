@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-
 namespace Kovecses.Result.Sample.MinimalApi.Tests.Support;
 
 public sealed class BookStoreApplicationFactory : WebApplicationFactory<Program>
