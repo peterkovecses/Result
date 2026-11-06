@@ -75,6 +75,8 @@ Content-Type: application/json
   "initialStock": 10
 }
 
+### Submit the order after adding the book
+# Returns 402 Payment Required from the custom payment-declined mapping.
 POST {{Host}}/api/orders
 X-Customer-Id: customer-123
 Content-Type: application/json
