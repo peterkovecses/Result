@@ -93,6 +93,36 @@ public class RestockBooksValidatorTests
     }
 
     [Fact]
+    public async Task ValidateAsync_WhenItemsAreNull_ShouldReturnFieldError()
+    {
+        // Arrange
+        var command = new RestockBooksCommand(null!);
+
+        // Act
+        var result = await _sut.ValidateAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveError(ErrorCodes.Validation)
+            .HaveValidationProperty("Items").Contain("At least one item");
+    }
+
+    [Fact]
+    public async Task ValidateAsync_WhenItemIsNull_ShouldReportOtherInvalidItems()
+    {
+        // Arrange
+        var command = new RestockBooksCommand([null!, new(null!, 0)]);
+
+        // Act
+        var result = await _sut.ValidateAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveError(ErrorCodes.Validation)
+            .HaveValidationProperty("Items").ContainAll("Every item is required", "ISBN", "quantity");
+    }
+
+    [Fact]
     public async Task ValidateAsync_BadQuantityAndDuplicates_ShouldReturnAllMessages()
     {
         // Arrange

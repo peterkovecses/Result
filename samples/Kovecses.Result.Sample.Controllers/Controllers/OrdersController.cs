@@ -45,6 +45,8 @@ public sealed class OrdersController(IMediator mediator) : ApiControllerBase(med
             });
         }
 
-        return errors[0].ToActionResult();
+        return errors.Length == 1
+            ? errors[0].ToActionResult()
+            : Result.Failure(errors).ToActionResult();
     }
 }

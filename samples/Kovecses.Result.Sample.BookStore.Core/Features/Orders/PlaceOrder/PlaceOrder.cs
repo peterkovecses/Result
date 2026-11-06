@@ -9,15 +9,21 @@ public sealed class PlaceOrderValidator : IValidator<PlaceOrderCommand>
     public const int MaxQuantityPerLine = 20;
 
     public Task<Result> ValidateAsync(PlaceOrderCommand request, CancellationToken cancellationToken)
-        => new ValidationErrors()
-            .AddIf(request.Lines.Count == 0, nameof(request.Lines), "An order needs at least one line.")
-            .AddIf(request.Lines.Any(line => string.IsNullOrWhiteSpace(line.Isbn)), nameof(request.Lines), "Every line needs an ISBN.")
+    {
+        var lines = request.Lines;
+        var validLines = lines?.OfType<OrderItem>().ToArray() ?? [];
+
+        return new ValidationErrors()
+            .AddIf(lines is null || lines.Count == 0, nameof(request.Lines), "An order needs at least one line.")
+            .AddIf(lines is not null && validLines.Length != lines.Count, nameof(request.Lines), "Every line is required.")
+            .AddIf(validLines.Any(line => string.IsNullOrWhiteSpace(line.Isbn)), nameof(request.Lines), "Every line needs an ISBN.")
             .AddIf(
-                request.Lines.Any(line => line.Quantity is < 1 or > MaxQuantityPerLine),
+                validLines.Any(line => line.Quantity is < 1 or > MaxQuantityPerLine),
                 nameof(request.Lines),
                 $"Every quantity must be between 1 and {MaxQuantityPerLine}.")
-            .AddIf(request.Lines.GroupBy(line => line.Isbn).Any(group => group.Count() > 1), nameof(request.Lines), "Each ISBN can only appear once.")
+            .AddIf(validLines.GroupBy(line => line.Isbn).Any(group => group.Count() > 1), nameof(request.Lines), "Each ISBN can only appear once.")
             .ToResultAsync();
+    }
 }
 
 public sealed class PlaceOrderHandler(

@@ -245,6 +245,36 @@ public class PlaceOrderValidatorTests
     }
 
     [Fact]
+    public async Task ValidateAsync_WhenLinesAreNull_ShouldReturnFieldError()
+    {
+        // Arrange
+        var command = new PlaceOrderCommand(null!);
+
+        // Act
+        var result = await _sut.ValidateAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveError(ErrorCodes.Validation)
+            .HaveValidationProperty("Lines").Contain("at least one line");
+    }
+
+    [Fact]
+    public async Task ValidateAsync_WhenLineIsNull_ShouldReportOtherInvalidLines()
+    {
+        // Arrange
+        var command = new PlaceOrderCommand([null!, new("", 0)]);
+
+        // Act
+        var result = await _sut.ValidateAsync(command, default);
+
+        // Assert
+        result.Should().BeFailure()
+            .HaveError(ErrorCodes.Validation)
+            .HaveValidationProperty("Lines").ContainAll("Every line is required", "ISBN", "between 1 and 20");
+    }
+
+    [Fact]
     public async Task ValidateAsync_BadLines_ShouldReturnAllMessages()
     {
         // Arrange

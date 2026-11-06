@@ -190,6 +190,22 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task RestockBook_WhenItemIsNull_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        var command = new { Items = new object?[] { null } };
+
+        // Act
+        using var response = await _client.PostAsJsonAsync("/books/restock", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("Every item is required.", problem.GetProperty("errors").GetProperty("Items")
+            .EnumerateArray().Select(message => message.GetString()));
+    }
+
+    [Fact]
     public async Task RetireBook_WhenBookExists_ShouldReturnNoContent()
     {
         // Arrange
@@ -258,6 +274,42 @@ public sealed class ControllersIntegrationTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PlaceOrder_WhenLineIsNull_ShouldReturnValidationProblem()
+    {
+        // Arrange
+        SetCustomer("alice");
+        var command = new { Lines = new object?[] { null } };
+
+        // Act
+        using var response = await _client.PostAsJsonAsync("/orders", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("Every line is required.", problem.GetProperty("errors").GetProperty("Lines")
+            .EnumerateArray().Select(message => message.GetString()));
+    }
+
+    [Fact]
+    public async Task PlaceOrder_WhenMultipleBooksAreMissing_ShouldReturnAllErrors()
+    {
+        // Arrange
+        SetCustomer("alice");
+        var command = new PlaceOrderCommand([new("1111111111111", 1), new("2222222222222", 1)]);
+
+        // Act
+        using var response = await _client.PostAsJsonAsync("/orders", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var errors = problem.GetProperty("errors").EnumerateArray().ToArray();
+        Assert.Equal(2, errors.Length);
+        Assert.Contains("1111111111111", errors[0].GetProperty("message").GetString());
+        Assert.Contains("2222222222222", errors[1].GetProperty("message").GetString());
     }
 
     [Fact]
