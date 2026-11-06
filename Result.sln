@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kovecses.Result.Sample.Book
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kovecses.Result.Sample.Controllers.Tests", "samples\Kovecses.Result.Sample.Controllers.Tests\Kovecses.Result.Sample.Controllers.Tests.csproj", "{1083935C-3DDD-4851-9D7A-4EAEA94BFA27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kovecses.Result.Sample.MinimalApi.Tests", "samples\Kovecses.Result.Sample.MinimalApi.Tests\Kovecses.Result.Sample.MinimalApi.Tests.csproj", "{27706C33-2048-4F7F-AEA8-D72A09554C4C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -201,6 +203,18 @@ Global
 		{1083935C-3DDD-4851-9D7A-4EAEA94BFA27}.Release|x64.Build.0 = Release|Any CPU
 		{1083935C-3DDD-4851-9D7A-4EAEA94BFA27}.Release|x86.ActiveCfg = Release|Any CPU
 		{1083935C-3DDD-4851-9D7A-4EAEA94BFA27}.Release|x86.Build.0 = Release|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Debug|x64.Build.0 = Debug|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Debug|x86.Build.0 = Debug|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Release|x64.ActiveCfg = Release|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Release|x64.Build.0 = Release|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Release|x86.ActiveCfg = Release|Any CPU
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -219,5 +233,6 @@ Global
 		{BF7A6FA7-9765-4C7B-9F53-38716AACBDEC} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{109F1590-0C61-415F-8967-A9DBB7EA9D84} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{1083935C-3DDD-4851-9D7A-4EAEA94BFA27} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
+		{27706C33-2048-4F7F-AEA8-D72A09554C4C} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 	EndGlobalSection
 EndGlobal
