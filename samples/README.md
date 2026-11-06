@@ -44,25 +44,25 @@ Core points to the file in `BookStore.Core` that shows the feature. The host col
 
 | Library feature | Core | MinimalApi | Controllers |
 |---|---|---|---|
-| `Result.Success()` / `Success(data)` / `Success(metadata)` | `ValidationErrors`, `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | planned | planned |
-| `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | planned | planned |
-| Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | planned | planned |
-| `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | planned | planned |
-| `Result.Combine` | `GetManyAsync`, `RestockBooks`, `ValidationDecorator` | planned | planned |
-| `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | planned | planned |
-| `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | planned | planned |
-| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary` | planned | planned |
-| `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` on `Task<Result<T>>` | `AddBook`, `ChangeBookPrice`, `RetireBook`, `GetOrder`, `PlaceOrder` | planned | planned |
-| `BindAsync` on `Result` and `Result<T>` instances | `RestockBooks`, `GetOrder`, `PlaceOrder` | planned | planned |
-| `EnsureAsync` with an async predicate | `RetireBook` | planned | planned |
-| `ValueOrThrow` | `BookSeedData`, `GetManyAsync`, `PlaceOrder`, `RestockBooks` | planned | planned |
-| `ValueOrDefault` | `GetOrderSummary` | planned | planned |
-| `ToResult` (`Result<T>` to `Result`) | `RetireBook`, `RestockBooks` | planned | planned |
-| `JoinErrorMessages` | `PlaceOrder`, `RestockBooks` | planned | planned |
-| `FirstErrorMessage` | `PlaceOrder` | planned | planned |
-| Success and error metadata | `RestockBooks`, `CancelOrder` (success); `BookErrors.InsufficientStock`, `ValidationErrors` (error) | planned | planned |
-| `Error` `with { Metadata = ... }` | `BookErrors.InsufficientStock` | planned | planned |
-| Error factories (`NotFound`, `Unauthorized`, `Forbidden`, `Conflict`, `Failure`, `Timeout`, `Unexpected`, `Canceled`, `Validation`) | `BookErrors`, `OrderErrors`, `CurrentUser`, `ValidationErrors` | planned | planned |
-| `Kovecses.Result.FluentAssertions` | `BookStore.Core.Tests` (`BeSuccess`, `BeFailure`, `HaveError`, `HaveType`, `HaveData`, `HaveMetadata`, `HaveErrors`, `HaveValidationProperty`, `ThrowOnValueAccess`) | planned | planned |
-| `Kovecses.Result.AspNetCore` (HTTP result mapping, ProblemDetails) | n/a (host concern) | planned | planned |
-| JSON serialization of results and errors | n/a (host concern) | planned | planned |
+| `Result.Success()` / `Success(data)` / `Success(metadata)` | `ValidationErrors`, `RestockBooks`, `CancelOrder`, `SearchBooks`, `GetOrderSummary` | planned | `BooksController.Restock`, `OrdersController.Place` |
+| `Result.Failure(...)` overloads (`Error`, code + message, code + message + type, `IEnumerable<Error>`, generic variants) | `Order.Place`, `FakePaymentGateway`, `ValidationErrors`, `GetManyAsync`, `PlaceOrder` | planned | `OrdersController.Place` failure mapping |
+| Implicit conversions from `Error`, `Error[]`, `List<Error>` and data | `InMemoryBookRepository`, `AddBook`, `PlaceOrder`, `CurrentUser`, `CancelOrder`, `Order.Place` | planned | Via Core handlers |
+| `Result.CreateFailure<T>` | `ValidationDecorator` (`Application/Abstractions.cs`) | planned | Via Core validation decorator |
+| `Result.Combine` | `GetManyAsync`, `RestockBooks`, `ValidationDecorator` | planned | Via Core handlers |
+| `Match`, `MatchFirst` | `GetManyAsync`, `PlaceOrder`, `CancelOrder` | planned | `OrdersController.Place` |
+| `MatchAsync`, `MatchFirstAsync` | `GetOrderSummary`, `CancelOrder` | planned | Via Core handlers |
+| `Map`, `Bind`, `Tap`, `Ensure` (sync) | `Book`, `Order`, `PlaceOrder`, `GetBook`, `GetOrderSummary` | planned | Via Core handlers |
+| `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` on `Task<Result<T>>` | `AddBook`, `ChangeBookPrice`, `RetireBook`, `GetOrder`, `PlaceOrder` | planned | Via Core handlers |
+| `BindAsync` on `Result` and `Result<T>` instances | `RestockBooks`, `GetOrder`, `PlaceOrder` | planned | Via Core handlers |
+| `EnsureAsync` with an async predicate | `RetireBook` | planned | Via Core handlers |
+| `ValueOrThrow` | `BookSeedData`, `GetManyAsync`, `PlaceOrder`, `RestockBooks` | planned | Via Core handlers |
+| `ValueOrDefault` | `GetOrderSummary` | planned | Via Core handlers |
+| `ToResult` (`Result<T>` to `Result`) | `RetireBook`, `RestockBooks` | planned | Via Core handlers |
+| `JoinErrorMessages` | `PlaceOrder`, `RestockBooks` | planned | Via Core handlers |
+| `FirstErrorMessage` | `PlaceOrder` | planned | Via Core handlers |
+| Success and error metadata | `RestockBooks`, `CancelOrder` (success); `BookErrors.InsufficientStock`, `ValidationErrors` (error) | planned | `BooksController.Restock` response header; `BooksController` validation |
+| `Error` `with { Metadata = ... }` | `BookErrors.InsufficientStock` | planned | Via Core handlers |
+| Error factories (`NotFound`, `Unauthorized`, `Forbidden`, `Conflict`, `Failure`, `Timeout`, `Unexpected`, `Canceled`, `Validation`) | `BookErrors`, `OrderErrors`, `CurrentUser`, `ValidationErrors` | planned | `OrdersController.Place` direct `Error.ToActionResult` fallback |
+| `Kovecses.Result.FluentAssertions` | `BookStore.Core.Tests` (`BeSuccess`, `BeFailure`, `HaveError`, `HaveType`, `HaveData`, `HaveMetadata`, `HaveErrors`, `HaveValidationProperty`, `ThrowOnValueAccess`) | planned | `ControllersIntegrationTests` (`BeSuccess`, `BeFailure`, `HaveError`, `ValueOrThrow`) |
+| `Kovecses.Result.AspNetCore` (HTTP result mapping, ProblemDetails) | n/a (host concern) | planned | `BooksController`, `OrdersController` |
+| JSON serialization of results and errors | n/a (host concern) | planned | `InternalOrdersController`, `ControllersIntegrationTests` |
