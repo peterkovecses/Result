@@ -1,3 +1,70 @@
+# Release Notes - Kovecses.Result 3.0.0
+
+## Breaking Changes
+
+### Error factories use `(code, message)` argument order
+
+The `NotFound`, `Unauthorized`, `Forbidden`, `Conflict`, `Failure`, `Timeout`, `Unexpected`, and `Canceled` factories changed from `(message, code)` to `(code, message)`. Both values are strings, so old positional calls still compile but can silently reverse their meaning. A single positional string now sets the code.
+
+```csharp
+// Before
+Error.Failure("Invalid request", "Bad.Request");
+Error.NotFound("Book not found");
+
+// After
+Error.Failure("Bad.Request", "Invalid request");
+Error.NotFound(message: "Book not found");
+```
+
+Use named arguments when changing only one value. See [PR #13](https://github.com/peterkovecses/Result/pull/13).
+
+### `Error.Custom` was removed
+
+Use the constructor for an error with an arbitrary type, or a typed factory when one is available.
+
+```csharp
+// Before
+Error.Custom("Catalog.Retired", "The book is retired.", ErrorType.Conflict);
+
+// After
+new Error("Catalog.Retired", "The book is retired.", ErrorType.Conflict);
+// Or use Error.Conflict(...) for a conflict error.
+```
+
+See [PR #11](https://github.com/peterkovecses/Result/pull/11).
+
+### Error codes, record updates, and JSON payloads are validated
+
+Codes must now be non-empty and non-whitespace, and `with` expressions validate updated `Code` and `Message` values. Deserialization no longer replaces invalid or missing values with `"Unknown"` and `"Unknown error"`; it throws `JsonException` for a missing, null, empty, or whitespace code, or a missing or null message. A missing `type` still defaults to `ErrorType.Failure`.
+
+```csharp
+// Previously accepted:
+var error = new Error("", "Invalid input", ErrorType.Validation);
+var changed = error with { Code = " " };
+var changedMessage = error with { Message = null! };
+
+// Now throws ArgumentException for the empty/whitespace code.
+// `with { Code = " " }` throws ArgumentException; a null code or message throws ArgumentNullException.
+
+// Before: invalid payloads were deserialized with fallback values.
+var fallback = JsonSerializer.Deserialize<Error>("{}");
+
+// After: provide a valid code and message.
+var valid = JsonSerializer.Deserialize<Error>(
+    """{"code":"Book.Invalid","message":"Invalid input"}""");
+// Deserializing {"message":"Invalid input"} now throws JsonException.
+```
+
+The `Result.Failure(...)` overloads that take a code and message surface the same exceptions. Provide a valid code and message before constructing, updating, or deserializing an `Error`. See [PR #11](https://github.com/peterkovecses/Result/pull/11).
+
+## Samples and Documentation
+
+- Added a shared bookstore core with catalog and order vertical slices, in-memory repositories, validation, payment handling, and unit tests ([PR #12](https://github.com/peterkovecses/Result/pull/12)).
+- Rebuilt the Minimal API and Controllers examples on the bookstore core, with integration coverage for HTTP result mapping, validation, JSON round trips, and payment responses ([PR #14](https://github.com/peterkovecses/Result/pull/14), [PR #15](https://github.com/peterkovecses/Result/pull/15)).
+- Removed the obsolete Employee samples and updated the project documentation and sample coverage matrix ([PR #16](https://github.com/peterkovecses/Result/pull/16)).
+
+---
+
 # Release Notes - Kovecses.Result 2.11.0
 
 ## New Features

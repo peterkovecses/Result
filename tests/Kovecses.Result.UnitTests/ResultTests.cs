@@ -108,7 +108,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorArrayToResult_ShouldReturnFailure()
     {
         // Arrange
-        Error[] errors = [Error.Failure("Msg1", "Code1"), Error.Failure("Msg2", "Code2")];
+        Error[] errors = [Error.Failure("Code1", "Msg1"), Error.Failure("Code2", "Msg2")];
 
         // Act
         Result result = errors;
@@ -125,7 +125,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorListToResult_ShouldReturnFailure()
     {
         // Arrange
-        var errors = new List<Error> { Error.Failure("Msg1", "Code1"), Error.Failure("Msg2", "Code2") };
+        var errors = new List<Error> { Error.Failure("Code1", "Msg1"), Error.Failure("Code2", "Msg2") };
 
         // Act
         Result result = errors;
@@ -140,7 +140,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorArrayToGenericResult_ShouldReturnFailure()
     {
         // Arrange
-        Error[] errors = [Error.Failure("Msg1", "Code1")];
+        Error[] errors = [Error.Failure("Code1", "Msg1")];
 
         // Act
         Result<int> result = errors;
@@ -155,7 +155,7 @@ public class ResultTests
     public void ImplicitOperator_WhenAssigningErrorListToGenericResult_ShouldReturnFailure()
     {
         // Arrange
-        var errors = new List<Error> { Error.Failure("Msg1", "Code1") };
+        var errors = new List<Error> { Error.Failure("Code1", "Msg1") };
 
         // Act
         Result<string> result = errors;
@@ -395,13 +395,42 @@ public class ResultTests
     public void Map_WhenFailure_ShouldReturnFailure()
     {
         // Arrange
-        var result = Result.Failure<int>(Error.Validation("Validation.Error", "Message"));
+        var errors = new[] { Error.Validation("Validation.Error", "Message"), Error.NotFound() };
+        var result = Result.Failure<int>(errors);
+        var mappingExecuted = false;
 
         // Act
-        var mapped = result.Map(x => x * 2);
+        var mapped = result.Map(x =>
+        {
+            mappingExecuted = true;
+            return x * 2;
+        });
 
         // Assert
+        Assert.False(mappingExecuted);
         mapped.Should().BeFailure();
+        Assert.Equal(errors, mapped.Errors);
+    }
+
+    [Fact]
+    public async Task MapAsync_WhenFailure_ShouldNotExecuteMappingAndPreserveErrors()
+    {
+        // Arrange
+        var errors = new[] { Error.Validation("Validation.Error", "Message"), Error.NotFound() };
+        var result = Result.Failure<int>(errors);
+        var mappingExecuted = false;
+
+        // Act
+        var mapped = await result.MapAsync(x =>
+        {
+            mappingExecuted = true;
+            return Task.FromResult(x * 2);
+        });
+
+        // Assert
+        Assert.False(mappingExecuted);
+        mapped.Should().BeFailure();
+        Assert.Equal(errors, mapped.Errors);
     }
 
     [Fact]
@@ -434,13 +463,21 @@ public class ResultTests
     public void Bind_WhenFailure_ShouldReturnFailure()
     {
         // Arrange
-        var result = Result.Failure<int>(Error.NotFound());
+        var errors = new[] { Error.NotFound(), Error.Failure("Book.Unavailable", "Book is unavailable.") };
+        var result = Result.Failure<int>(errors);
+        var nextExecuted = false;
 
         // Act
-        var bound = result.Bind(x => Result.Success(x.ToString()));
+        var bound = result.Bind(x =>
+        {
+            nextExecuted = true;
+            return Result.Success(x.ToString());
+        });
 
         // Assert
+        Assert.False(nextExecuted);
         bound.Should().BeFailure();
+        Assert.Equal(errors, bound.Errors);
     }
 
     [Fact]
@@ -454,6 +491,27 @@ public class ResultTests
 
         // Assert
         bound.Should().BeSuccess().HaveData("10");
+    }
+
+    [Fact]
+    public async Task BindAsync_WhenFailure_ShouldNotExecuteNextAndPreserveErrors()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Failure("Book.Unavailable", "Book is unavailable.") };
+        var result = Result.Failure<int>(errors);
+        var nextExecuted = false;
+
+        // Act
+        var bound = await result.BindAsync(x =>
+        {
+            nextExecuted = true;
+            return Task.FromResult(Result.Success(x.ToString()));
+        });
+
+        // Assert
+        Assert.False(nextExecuted);
+        bound.Should().BeFailure();
+        Assert.Equal(errors, bound.Errors);
     }
 
     [Fact]
@@ -484,7 +542,7 @@ public class ResultTests
     {
         // Arrange
         var error1 = Error.Validation(ErrorCodes.Validation, "Message") with { Metadata = new Dictionary<string, object> { { "F1", "E1" } } };
-        var error2 = Error.Failure("F2", "C.2") with { Metadata = new Dictionary<string, object> { { "C.2", "F2" } } };
+        var error2 = Error.Failure("C.2", "F2") with { Metadata = new Dictionary<string, object> { { "C.2", "F2" } } };
 
         // Act
         var result = Result.Combine(Result.Failure(error1), Result.Failure(error2));

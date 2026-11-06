@@ -312,4 +312,186 @@ public class ResultExtensionsTests
         // Assert
         Assert.Empty(result.JoinErrorMessages());
     }
+
+    [Fact]
+    public async Task BindAsync_WithSynchronousGenericCallback_WhenSuccessful_ShouldChain()
+    {
+        var result = await Task.FromResult(Result.Success(10))
+            .BindAsync(value => Result.Success(value.ToString()));
+
+        result.Should().BeSuccess().HaveData("10");
+    }
+
+    [Fact]
+    public async Task BindAsync_WithSynchronousGenericCallback_WhenFailed_ShouldCarryFailure()
+    {
+        var result = await Task.FromResult(Result.Failure<int>(Error.NotFound()))
+            .BindAsync(value => Result.Success(value.ToString()));
+
+        result.Should().BeFailure().HaveError(ErrorCodes.NotFound);
+    }
+
+    [Theory]
+    [InlineData(true, "Success")]
+    [InlineData(false, "Failure")]
+    public async Task MatchAsync_WithTaskResult_WhenUsingSynchronousCallbacks_ShouldMatch(bool succeeds, string expected)
+    {
+        Task<Result> task = succeeds
+            ? Task.FromResult(Result.Success())
+            : Task.FromResult(Result.Failure(Error.NotFound()));
+
+        var actual = await task.MatchAsync(() => "Success", _ => "Failure");
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(true, "Success")]
+    [InlineData(false, "Failure")]
+    public async Task MatchAsync_WithTaskResult_WhenUsingAsynchronousCallbacks_ShouldMatch(bool succeeds, string expected)
+    {
+        Task<Result> task = succeeds
+            ? Task.FromResult(Result.Success())
+            : Task.FromResult(Result.Failure(Error.NotFound()));
+
+        var actual = await task.MatchAsync(
+            () => Task.FromResult("Success"),
+            _ => Task.FromResult("Failure"));
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void ToResult_WhenConvertingToGenericResult_ShouldPreserveStateAndMetadata()
+    {
+        var metadata = new Dictionary<string, object> { ["source"] = "catalog" };
+        var success = Result.Success(metadata).ToResult("book-1");
+        var failure = Result.Failure(Error.NotFound(), metadata).ToResult("book-1");
+
+        success.Should().BeSuccess().HaveData("book-1").HaveMetadata("source", "catalog");
+        failure.Should().BeFailure().HaveError(ErrorCodes.NotFound);
+        Assert.Equal("catalog", failure.Metadata!["source"]);
+    }
+
+    [Fact]
+    public void ToResult_WhenDiscardingGenericResultData_ShouldPreserveStateAndMetadata()
+    {
+        var metadata = new Dictionary<string, object> { ["source"] = "catalog" };
+        var success = Result.Success("book-1", metadata).ToResult();
+        var failure = Result.Failure<string>(Error.NotFound(), metadata).ToResult();
+
+        success.Should().BeSuccess().HaveMetadata("source", "catalog");
+        failure.Should().BeFailure().HaveError(ErrorCodes.NotFound);
+        Assert.Equal("catalog", failure.Metadata!["source"]);
+    }
+
+    [Fact]
+    public void Ensure_WhenPredicatePasses_ShouldReturnOriginalResult()
+    {
+        var result = Result.Success("book-1");
+
+        var ensured = result.Ensure(value => value.StartsWith("book-", StringComparison.Ordinal), Error.Failure());
+
+        Assert.Same(result, ensured);
+    }
+
+    [Fact]
+    public void Ensure_WhenPredicateFails_ShouldReturnFailure()
+    {
+        var result = Result.Success("invalid");
+
+        var ensured = result.Ensure(value => value.StartsWith("book-", StringComparison.Ordinal), Error.Validation("Book.Isbn", "Invalid ISBN."));
+
+        ensured.Should().BeFailure().HaveError("Book.Isbn");
+    }
+
+    [Fact]
+    public async Task EnsureAsync_WithSynchronousPredicate_ShouldPreserveOrFail()
+    {
+        var success = await Task.FromResult(Result.Success("book-1"))
+            .EnsureAsync(value => value.StartsWith("book-", StringComparison.Ordinal), Error.Failure());
+        var failure = await Task.FromResult(Result.Success("invalid"))
+            .EnsureAsync(value => value.StartsWith("book-", StringComparison.Ordinal), Error.Validation("Book.Isbn", "Invalid ISBN."));
+
+        success.Should().BeSuccess().HaveData("book-1");
+        failure.Should().BeFailure().HaveError("Book.Isbn");
+    }
+
+    [Fact]
+    public async Task EnsureAsync_WithAsynchronousPredicate_ShouldPreserveOrFail()
+    {
+        var success = await Task.FromResult(Result.Success("book-1"))
+            .EnsureAsync(value => Task.FromResult(value.StartsWith("book-", StringComparison.Ordinal)), Error.Failure());
+        var failure = await Task.FromResult(Result.Success("invalid"))
+            .EnsureAsync(value => Task.FromResult(value.StartsWith("book-", StringComparison.Ordinal)), Error.Validation("Book.Isbn", "Invalid ISBN."));
+
+        success.Should().BeSuccess().HaveData("book-1");
+        failure.Should().BeFailure().HaveError("Book.Isbn");
+    }
+
+    [Fact]
+    public void Ensure_WhenFailure_ShouldSkipPredicateAndPreserveErrorsAndMetadata()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Failure("Book.Unavailable", "Book is unavailable.") };
+        var metadata = new Dictionary<string, object> { ["source"] = "catalog" };
+        var result = Result.Failure<string>(errors, metadata);
+        var predicateExecuted = false;
+
+        // Act
+        var ensured = result.Ensure(_ =>
+        {
+            predicateExecuted = true;
+            return true;
+        }, Error.Failure());
+
+        // Assert
+        Assert.False(predicateExecuted);
+        Assert.Equal(errors, ensured.Errors);
+        Assert.Equal("catalog", ensured.Metadata!["source"]);
+    }
+
+    [Fact]
+    public async Task EnsureAsync_WithSynchronousPredicate_WhenFailure_ShouldSkipPredicateAndPreserveErrorsAndMetadata()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Failure("Book.Unavailable", "Book is unavailable.") };
+        var metadata = new Dictionary<string, object> { ["source"] = "catalog" };
+        var result = Result.Failure<string>(errors, metadata);
+        var predicateExecuted = false;
+
+        // Act
+        var ensured = await Task.FromResult(result).EnsureAsync(_ =>
+        {
+            predicateExecuted = true;
+            return true;
+        }, Error.Failure());
+
+        // Assert
+        Assert.False(predicateExecuted);
+        Assert.Equal(errors, ensured.Errors);
+        Assert.Equal("catalog", ensured.Metadata!["source"]);
+    }
+
+    [Fact]
+    public async Task EnsureAsync_WithAsynchronousPredicate_WhenFailure_ShouldSkipPredicateAndPreserveErrorsAndMetadata()
+    {
+        // Arrange
+        var errors = new[] { Error.NotFound(), Error.Failure("Book.Unavailable", "Book is unavailable.") };
+        var metadata = new Dictionary<string, object> { ["source"] = "catalog" };
+        var result = Result.Failure<string>(errors, metadata);
+        var predicateExecuted = false;
+
+        // Act
+        var ensured = await Task.FromResult(result).EnsureAsync(_ =>
+        {
+            predicateExecuted = true;
+            return Task.FromResult(true);
+        }, Error.Failure());
+
+        // Assert
+        Assert.False(predicateExecuted);
+        Assert.Equal(errors, ensured.Errors);
+        Assert.Equal("catalog", ensured.Metadata!["source"]);
+    }
 }

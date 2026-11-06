@@ -60,15 +60,34 @@ public enum ErrorType
 [JsonConverter(typeof(ErrorJsonConverter))]
 public record Error
 {
+    private readonly string _code = null!;
+    private readonly string _message = null!;
+
     /// <summary>
     /// Gets the unique business error code (e.g., "User.NotFound").
     /// </summary>
-    public string Code { get; init; }
+    public string Code
+    {
+        get => _code;
+        init
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value, nameof(Code));
+            _code = value;
+        }
+    }
 
     /// <summary>
     /// Gets the human-readable error message.
     /// </summary>
-    public string Message { get; init; }
+    public string Message
+    {
+        get => _message;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value, nameof(Message));
+            _message = value;
+        }
+    }
 
     /// <summary>
     /// Gets the technical type of the error for infrastructure handling.
@@ -88,24 +107,17 @@ public record Error
     /// <param name="type">The technical type of the error.</param>
     /// <param name="metadata">Optional metadata associated with the error.</param>
     /// <exception cref="ArgumentNullException">Thrown when code or message is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when code is empty or whitespace.</exception>
     public Error(string code, string message, ErrorType type, Dictionary<string, object>? metadata = null)
     {
-        Code = code ?? throw new ArgumentNullException(nameof(code));
-        Message = message ?? throw new ArgumentNullException(nameof(message));
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        ArgumentNullException.ThrowIfNull(message);
+
+        Code = code;
+        Message = message;
         Type = type;
         Metadata = metadata;
     }
-
-    /// <summary>
-    /// Creates a custom error with a specific type.
-    /// </summary>
-    /// <param name="code">The error code.</param>
-    /// <param name="message">The error message.</param>
-    /// <param name="type">The error type.</param>
-    /// <param name="metadata">Optional metadata.</param>
-    /// <returns>A new <see cref="Error"/> instance.</returns>
-    public static Error Custom(string code, string message, ErrorType type, Dictionary<string, object>? metadata = null)
-        => new(code, message, type, metadata);
 
     /// <summary>
     /// Creates a "Validation" error.
@@ -120,73 +132,73 @@ public record Error
     /// <summary>
     /// Creates a "NotFound" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new not found <see cref="Error"/>.</returns>
-    public static Error NotFound(string message = "The requested resource was not found.", string code = ErrorCodes.NotFound)
+    public static Error NotFound(string code = ErrorCodes.NotFound, string message = "The requested resource was not found.")
         => new(code, message, ErrorType.NotFound);
 
     /// <summary>
     /// Creates an "Unauthorized" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new unauthorized <see cref="Error"/>.</returns>
-    public static Error Unauthorized(string message = "Authentication is required to access this resource.", string code = ErrorCodes.Unauthorized)
+    public static Error Unauthorized(string code = ErrorCodes.Unauthorized, string message = "Authentication is required to access this resource.")
         => new(code, message, ErrorType.Unauthorized);
 
     /// <summary>
     /// Creates a "Forbidden" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new forbidden <see cref="Error"/>.</returns>
-    public static Error Forbidden(string message = "You do not have permission to access this resource.", string code = ErrorCodes.Forbidden)
+    public static Error Forbidden(string code = ErrorCodes.Forbidden, string message = "You do not have permission to access this resource.")
         => new(code, message, ErrorType.Forbidden);
 
     /// <summary>
     /// Creates a "Conflict" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new conflict <see cref="Error"/>.</returns>
-    public static Error Conflict(string message = "A conflict occurred while processing the request.", string code = ErrorCodes.Conflict)
+    public static Error Conflict(string code = ErrorCodes.Conflict, string message = "A conflict occurred while processing the request.")
         => new(code, message, ErrorType.Conflict);
 
     /// <summary>
     /// Creates a "Failure" (BadRequest) error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new failure <see cref="Error"/>.</returns>
-    public static Error Failure(string message = "The request was invalid or cannot be served.", string code = ErrorCodes.Failure)
+    public static Error Failure(string code = ErrorCodes.Failure, string message = "The request was invalid or cannot be served.")
         => new(code, message, ErrorType.Failure);
 
     /// <summary>
     /// Creates a "Timeout" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new timeout <see cref="Error"/>.</returns>
-    public static Error Timeout(string message = "The operation has timed out.", string code = ErrorCodes.Timeout)
+    public static Error Timeout(string code = ErrorCodes.Timeout, string message = "The operation has timed out.")
         => new(code, message, ErrorType.Timeout);
 
     /// <summary>
     /// Creates an "Unexpected" internal error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new unexpected <see cref="Error"/>.</returns>
-    public static Error Unexpected(string message = "An unexpected error occurred while processing your request.", string code = ErrorCodes.Unexpected)
+    public static Error Unexpected(string code = ErrorCodes.Unexpected, string message = "An unexpected error occurred while processing your request.")
         => new(code, message, ErrorType.Unexpected);
 
     /// <summary>
     /// Creates a "Canceled" error.
     /// </summary>
-    /// <param name="message">The error message.</param>
     /// <param name="code">The error code.</param>
+    /// <param name="message">The error message.</param>
     /// <returns>A new canceled <see cref="Error"/>.</returns>
-    public static Error Canceled(string message = "The operation was canceled.", string code = ErrorCodes.Canceled)
+    public static Error Canceled(string code = ErrorCodes.Canceled, string message = "The operation was canceled.")
         => new(code, message, ErrorType.Canceled);
 }
 
@@ -204,12 +216,19 @@ public class ErrorJsonConverter : JsonConverter<Error>
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
-        var code = GetStringProperty(root, "Code", options) ?? "Unknown";
-        var message = GetStringProperty(root, "Message", options) ?? "Unknown error";
+        var code = GetStringProperty(root, "Code", options);
+        var message = GetStringProperty(root, "Message", options);
         var type = GetEnumProperty<ErrorType>(root, "Type", options);
         var metadata = GetMetadataProperty(root, options);
 
-        return new Error(code, message, type, metadata);
+        try
+        {
+            return new Error(code!, message!, type, metadata);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new JsonException($"Invalid error payload: {ex.Message}", ex);
+        }
     }
 
     /// <inheritdoc />
@@ -237,7 +256,7 @@ public class ErrorJsonConverter : JsonConverter<Error>
         if (root.TryGetProperty(name, out var element) ||
             TryGetPropertyCaseInsensitive(root, propertyName, out element))
         {
-            return element.GetString();
+            return element.ValueKind == JsonValueKind.String ? element.GetString() : null;
         }
 
         return null;
