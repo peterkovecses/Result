@@ -8,11 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kovecses.Result.AspNetCore\Kovecses.Result.AspNetCore.csproj" />
-    <ProjectReference Include="..\Kovecses.Result.Sample.Core\Kovecses.Result.Sample.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="Kovecses.Result.Sample.Tests" />
+    <ProjectReference Include="..\Kovecses.Result.Sample.BookStore.Core\Kovecses.Result.Sample.BookStore.Core.csproj" />
   </ItemGroup>
 
 </Project>
